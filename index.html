@@ -106,7 +106,11 @@ tbody tr.clickable:hover td{background:var(--bg2)}
 .form-group{display:flex;flex-direction:column;gap:4px}
 .form-group.full{grid-column:1/-1}
 .form-label{font-size:12px;font-weight:500;color:var(--text2)}
+.auth-card .form-label{color:rgba(255,255,255,0.75)}
 .form-input,.form-select,.form-textarea{padding:8px 10px;border:1px solid var(--border2);border-radius:var(--radius);font-size:13px;background:var(--bg);color:var(--text);font-family:inherit;transition:border-color .15s}
+.auth-card .form-input{background:rgba(255,255,255,0.12);border-color:rgba(255,255,255,0.25);color:#fff}
+.auth-card .form-input::placeholder{color:rgba(255,255,255,0.4)}
+.auth-card .form-input:focus{border-color:rgba(255,255,255,0.6);background:rgba(255,255,255,0.18)}
 .form-input:focus,.form-select:focus,.form-textarea:focus{outline:none;border-color:var(--accent)}
 .form-textarea{resize:vertical;min-height:68px}
 .form-row{display:flex;gap:8px;margin-top:16px;justify-content:flex-end}
@@ -157,13 +161,13 @@ tbody tr.clickable:hover td{background:var(--bg2)}
 .modal-close:hover{background:var(--bg2)}
 
 /* ===================== AUTH ===================== */
-#auth-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;background:var(--bg2)}
-.auth-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);padding:36px;width:100%;max-width:400px;box-shadow:var(--shadow)}
-.auth-logo{font-size:24px;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:8px}
-.auth-sub{font-size:13px;color:var(--text2);margin-bottom:24px}
+#auth-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;background:linear-gradient(135deg,#0d1b2a 0%,#1a2f4a 50%,#0d1b2a 100%)}
+.auth-card{background:rgba(0,0,0,0.45);border:1px solid rgba(255,255,255,0.15);border-radius:var(--radius-lg);padding:36px;width:100%;max-width:400px;box-shadow:var(--shadow);backdrop-filter:blur(12px)}
+.auth-logo{font-size:24px;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:8px;color:#ffffff}
+.auth-sub{font-size:13px;color:rgba(255,255,255,0.7);margin-bottom:20px}
 .auth-divider{border:none;border-top:1px solid var(--border);margin:18px 0}
-.auth-hint{font-size:11px;color:var(--text3);text-align:center}
-.auth-switch{font-size:13px;color:var(--text2);text-align:center;margin-top:14px}
+.auth-hint{font-size:11px;color:rgba(255,255,255,0.45);text-align:center}
+.auth-switch{font-size:13px;color:rgba(255,255,255,0.6);text-align:center;margin-top:14px}
 .auth-switch a{color:var(--accent);cursor:pointer;text-decoration:none}
 .auth-err{font-size:12px;color:var(--danger-text);background:var(--danger-bg);border:1px solid var(--danger);padding:9px 11px;border-radius:var(--radius);margin-bottom:12px;display:none}
 
@@ -236,18 +240,33 @@ tbody tr.clickable:hover td{background:var(--bg2)}
     </div>
 
     <div id="auth-form">
-      <label class="form-label" style="display:block;margin-bottom:4px">Username</label>
-      <input class="form-input" id="auth-user" placeholder="Enter username" autocomplete="username" style="width:100%;margin-bottom:12px"/>
-      <label class="form-label" style="display:block;margin-bottom:4px">Password</label>
-      <input class="form-input" id="auth-pass" type="password" placeholder="Password" autocomplete="current-password" style="width:100%;margin-bottom:4px"/>
-      <div id="auth-name-wrap" style="display:none;margin-top:10px">
-        <label class="form-label" style="display:block;margin-bottom:4px">Full Name</label>
-        <input class="form-input" id="auth-name" placeholder="Your full name" style="width:100%"/>
+      <!-- LOGIN VIEW -->
+      <div id="login-view">
+        <label class="form-label" style="display:block;margin-bottom:4px">Username</label>
+        <input class="form-input" id="auth-user" placeholder="Your username" autocomplete="username" style="width:100%;margin-bottom:12px"/>
+        <label class="form-label" style="display:block;margin-bottom:4px">Password</label>
+        <input class="form-input" id="auth-pass" type="password" placeholder="Password" autocomplete="current-password" style="width:100%;margin-bottom:4px"/>
+        <button class="btn btn-primary" id="auth-btn" onclick="doLogin()" style="width:100%;margin-top:14px;justify-content:center">Sign In</button>
+        <div class="auth-switch">No account? <a onclick="showRegister()">Request access</a></div>
       </div>
-      <button class="btn btn-primary" id="auth-btn" onclick="authAction()" style="width:100%;margin-top:14px;justify-content:center">Sign In</button>
-      <div class="auth-switch" id="auth-switch">No account? <a onclick="toggleAuthMode()">Create one</a></div>
-      <hr class="auth-divider"/>
-      <div class="auth-hint">Demo: <strong>admin</strong> / admin123 &nbsp;·&nbsp; <strong>mike</strong> / pass123</div>
+      <!-- REGISTER VIEW -->
+      <div id="register-view" style="display:none">
+        <label class="form-label" style="display:block;margin-bottom:4px">Full Name</label>
+        <input class="form-input" id="reg-name" placeholder="Your full name" style="width:100%;margin-bottom:12px"/>
+        <label class="form-label" style="display:block;margin-bottom:4px">Username</label>
+        <input class="form-input" id="reg-user" placeholder="Choose a username" style="width:100%;margin-bottom:12px"/>
+        <label class="form-label" style="display:block;margin-bottom:4px">Password</label>
+        <input class="form-input" id="reg-pass" type="password" placeholder="Choose a password" style="width:100%;margin-bottom:4px"/>
+        <button class="btn btn-primary" onclick="doRegister()" style="width:100%;margin-top:14px;justify-content:center">Request Access</button>
+        <div class="auth-switch"><a onclick="showLogin()">Back to sign in</a></div>
+      </div>
+      <!-- PENDING VIEW -->
+      <div id="pending-view" style="display:none;text-align:center;padding:8px 0">
+        <div style="font-size:32px;margin-bottom:12px">⏳</div>
+        <div style="color:#fff;font-weight:500;margin-bottom:8px">Request submitted!</div>
+        <div style="color:rgba(255,255,255,0.65);font-size:13px">Your account is pending approval. You'll be able to log in once an admin approves your request.</div>
+        <button class="btn btn-secondary" onclick="showLogin()" style="margin-top:16px;width:100%">Back to sign in</button>
+      </div>
     </div>
   </div>
 </div>
@@ -475,16 +494,36 @@ function initSupabase(cfg) {
 }
 
 // Auto-connect on load - no setup screen needed
-function startApp() {
+async function startApp() {
+  // Clear any old demo accounts from localStorage
+  try { localStorage.removeItem('mp_users'); } catch(e) {}
   try {
     supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     setSyncStatus('online');
   } catch(e) {
-    console.warn('Supabase init failed, running offline:', e);
+    console.warn('Supabase init failed:', e);
     offlineMode = true;
   }
   document.getElementById('setup-banner').style.display = 'none';
   document.getElementById('auth-form').style.display = 'block';
+  // Check if session saved locally
+  try {
+    const saved = localStorage.getItem('mp_session');
+    if (saved) {
+      const u = JSON.parse(saved);
+      // Re-verify still approved in DB
+      const { data: profile } = await supabase.from('profiles').select('*').eq('username', u.username).single();
+      if (profile && profile.status === 'approved') {
+        const isAdmin = u.username.toLowerCase() === ADMIN_USERNAME.toLowerCase();
+        currentUser = { ...u, role: isAdmin ? 'admin' : profile.role };
+        await enterApp();
+        return;
+      } else {
+        localStorage.removeItem('mp_session');
+      }
+    }
+  } catch(e) {}
+  showLogin();
 }
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', startApp);
@@ -493,68 +532,173 @@ if (document.readyState === 'loading') {
 }
 
 // ============================================================
-// USERS & AUTH
+// USERS & AUTH — Supabase Auth + approval queue
 // ============================================================
+const ADMIN_EMAIL = 'tannergalloway75@gmail.com';
+const ADMIN_USERNAME = 'tangal99';
 let currentUser = null;
-let authMode = 'login';
 
-const DEMO_USERS = [
-  { username:'admin', password:'admin123', name:'Admin User', role:'admin' },
-  { username:'mike',  password:'pass123',  name:'Mike R.',   role:'tech' },
-  { username:'sarah', password:'pass123',  name:'Sarah K.',  role:'tech' },
-  { username:'tom',   password:'pass123',  name:'Tom B.',    role:'tech' },
-  { username:'dana',  password:'pass123',  name:'Dana L.',   role:'tech' },
-];
-
-function getUsers() {
-  try { return JSON.parse(localStorage.getItem('mp_users') || 'null') || DEMO_USERS; } catch { return DEMO_USERS; }
-}
-function saveLocalUsers(u) { localStorage.setItem('mp_users', JSON.stringify(u)); }
-function getUserNames() { return getUsers().map(u => u.name); }
-
-function toggleAuthMode() {
-  authMode = authMode === 'login' ? 'register' : 'login';
-  document.getElementById('auth-btn').textContent = authMode === 'login' ? 'Sign In' : 'Create Account';
-  document.getElementById('auth-sub').textContent = authMode === 'login' ? 'Sign in to your team workspace' : 'Create a new account';
-  document.getElementById('auth-switch').innerHTML = authMode === 'login' ? 'No account? <a onclick="toggleAuthMode()">Create one</a>' : 'Have an account? <a onclick="toggleAuthMode()">Sign in</a>';
-  document.getElementById('auth-name-wrap').style.display = authMode === 'register' ? 'block' : 'none';
+// --- View switching ---
+function showLogin() {
+  document.getElementById('login-view').style.display = 'block';
+  document.getElementById('register-view').style.display = 'none';
+  document.getElementById('pending-view').style.display = 'none';
   document.getElementById('auth-err').style.display = 'none';
+  document.getElementById('auth-sub').textContent = 'Sign in to your workspace';
 }
-function showErr(msg) { const e = document.getElementById('auth-err'); e.textContent = msg; e.style.display = 'block'; }
-
-function authAction() {
-  const user = document.getElementById('auth-user').value.trim();
-  const pass = document.getElementById('auth-pass').value;
+function showRegister() {
+  document.getElementById('login-view').style.display = 'none';
+  document.getElementById('register-view').style.display = 'block';
+  document.getElementById('pending-view').style.display = 'none';
   document.getElementById('auth-err').style.display = 'none';
-  if (!user || !pass) { showErr('Please enter username and password.'); return; }
-
-  if (authMode === 'register') {
-    const name = document.getElementById('auth-name').value.trim() || user;
-    const users = getUsers();
-    if (users.find(u => u.username.toLowerCase() === user.toLowerCase())) { showErr('Username already taken.'); return; }
-    users.push({ username: user, password: pass, name, role: 'tech' });
-    saveLocalUsers(users);
-    login({ username: user, password: pass, name, role: 'tech' });
-  } else {
-    const found = getUsers().find(u => u.username.toLowerCase() === user.toLowerCase() && u.password === pass);
-    if (!found) { showErr('Invalid username or password.'); return; }
-    login(found);
-  }
+  document.getElementById('auth-sub').textContent = 'Request access to MTL Maintenance';
 }
-document.getElementById('auth-pass').addEventListener('keydown', e => { if (e.key === 'Enter') authAction(); });
+function showPending() {
+  document.getElementById('login-view').style.display = 'none';
+  document.getElementById('register-view').style.display = 'none';
+  document.getElementById('pending-view').style.display = 'block';
+  document.getElementById('auth-sub').textContent = 'Access requested';
+}
+function showErr(msg) {
+  const e = document.getElementById('auth-err');
+  e.textContent = msg; e.style.display = 'block';
+}
 
-async function login(u) {
-  currentUser = u;
+// --- Login ---
+async function doLogin() {
+  const username = document.getElementById('auth-user').value.trim();
+  const pass     = document.getElementById('auth-pass').value;
+  document.getElementById('auth-err').style.display = 'none';
+  if (!username || !pass) { showErr('Please enter your username and password.'); return; }
+  const btn = document.getElementById('auth-btn');
+  btn.textContent = 'Signing in...'; btn.disabled = true;
+  try {
+    const { data: profiles, error } = await supabase
+      .from('profiles').select('*')
+      .eq('username', username).single();
+    if (error || !profiles) { showErr('Username not found.'); btn.textContent='Sign In'; btn.disabled=false; return; }
+    if (profiles.password_hash !== btoa(pass)) { showErr('Incorrect password.'); btn.textContent='Sign In'; btn.disabled=false; return; }
+    if (profiles.status === 'pending') { showErr('Your account is pending admin approval.'); btn.textContent='Sign In'; btn.disabled=false; return; }
+    if (profiles.status === 'denied')  { showErr('Your access request was denied. Contact your administrator.'); btn.textContent='Sign In'; btn.disabled=false; return; }
+    const isAdmin = username.toLowerCase() === ADMIN_USERNAME.toLowerCase();
+    currentUser = { id: profiles.id, name: profiles.full_name || username, role: isAdmin ? 'admin' : profiles.role, username };
+    enterApp();
+  } catch(e) { showErr('Login failed. Try again.'); btn.textContent='Sign In'; btn.disabled=false; }
+}
+
+// --- Register ---
+async function doRegister() {
+  const name     = document.getElementById('reg-name').value.trim();
+  const username = document.getElementById('reg-user').value.trim();
+  const pass     = document.getElementById('reg-pass').value;
+  document.getElementById('auth-err').style.display = 'none';
+  if (!name || !username || !pass) { showErr('Please fill in all fields.'); return; }
+  if (pass.length < 6) { showErr('Password must be at least 6 characters.'); return; }
+  if (!/^[a-zA-Z0-9_]+$/.test(username)) { showErr('Username can only contain letters, numbers and underscores.'); return; }
+  try {
+    // Check username not taken
+    const { data: existing } = await supabase.from('profiles').select('id').eq('username', username).single();
+    if (existing) { showErr('That username is already taken.'); return; }
+    // Insert pending profile
+    const { error } = await supabase.from('profiles').insert({
+      id: crypto.randomUUID(), username, full_name: name,
+      role: 'tech', status: 'pending', password_hash: btoa(pass)
+    });
+    if (error) { showErr('Could not submit request: ' + error.message); return; }
+    showPending();
+  } catch(e) { showErr('Registration failed. Try again.'); }
+}
+
+// --- Enter app after login ---
+async function enterApp() {
+  try { localStorage.setItem('mp_session', JSON.stringify(currentUser)); } catch(e) {}
   document.getElementById('auth-screen').style.display = 'none';
   document.getElementById('app').style.display = 'block';
-  document.getElementById('user-chip-name').textContent = u.name;
+  document.getElementById('user-chip-name').textContent = currentUser.name;
+  // Show admin panel button if admin
+  if (currentUser.role === 'admin') {
+    const nav = document.querySelector('.nav');
+    if (nav && !document.getElementById('admin-nav-btn')) {
+      const btn = document.createElement('button');
+      btn.className = 'nav-btn'; btn.id = 'admin-nav-btn';
+      btn.textContent = 'Admin'; btn.onclick = () => showPanel('admin');
+      nav.appendChild(btn);
+    }
+    // Add admin panel if not present
+    if (!document.getElementById('panel-admin')) {
+      const panel = document.createElement('div');
+      panel.className = 'panel'; panel.id = 'panel-admin';
+      panel.innerHTML = `<div class="section-header"><span class="section-title">User Management</span></div>
+        <div class="grid-2">
+          <div class="card"><div class="card-header"><span class="card-title">Pending Approvals</span><span class="badge bd" id="pending-count"></span></div><div id="pending-list"></div></div>
+          <div class="card"><div class="card-header"><span class="card-title">Active Users</span></div><div id="active-list"></div></div>
+        </div>`;
+      document.getElementById('app').querySelector('.topbar').after(panel);
+    }
+  }
   await loadState();
   renderDashboard();
 }
-function signOut() {
+
+// --- Sign out ---
+async function signOut() {
+  localStorage.removeItem('mp_session');
   currentUser = null;
   document.getElementById('app').style.display = 'none';
   document.getElementById('auth-screen').style.display = 'flex';
+  showLogin();
+}
+
+// --- Admin: load users ---
+async function renderAdminPanel() {
+  try {
+    const { data: profiles } = await supabase.from('profiles').select('*').order('created_at', { ascending: false });
+    const pending  = profiles.filter(p => p.status === 'pending');
+    const active   = profiles.filter(p => p.status === 'approved');
+    const denied   = profiles.filter(p => p.status === 'denied');
+    document.getElementById('pending-count').textContent = pending.length || '0';
+    document.getElementById('pending-list').innerHTML = pending.length ? pending.map(p => `
+      <div class="parts-row">
+        <div style="flex:1">
+          <div style="font-weight:500">${p.full_name}</div>
+          <div style="font-size:11px;color:var(--text2)">${p.username} · Requested ${new Date(p.created_at).toLocaleDateString()}</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="approveUser('${p.id}','${p.full_name}')">Approve</button>
+        <button class="btn btn-danger btn-sm" onclick="denyUser('${p.id}')">Deny</button>
+      </div>`).join('') : '<div style="color:var(--text2);font-size:13px;padding:8px 0">No pending requests</div>';
+    document.getElementById('active-list').innerHTML = [...active, ...denied].length ? [...active, ...denied].map(p => `
+      <div class="parts-row">
+        <div style="flex:1">
+          <div style="font-weight:500">${p.full_name}</div>
+          <div style="font-size:11px;color:var(--text2)">${p.username} · ${p.status==='approved'?'Active':'Denied'}</div>
+        </div>
+        <span class="badge ${p.status==='approved'?'bs':'bd'}">${p.status==='approved'?'Active':'Denied'}</span>
+        <button class="btn btn-danger btn-sm" onclick="deleteUser('${p.id}','${p.full_name}')">Delete</button>
+      </div>`).join('') : '<div style="color:var(--text2);font-size:13px;padding:8px 0">No active users yet</div>';
+  } catch(e) { console.error('Admin panel error', e); }
+}
+
+async function approveUser(id, name) {
+  await supabase.from('profiles').update({ status: 'approved' }).eq('id', id);
+  showToast(name + ' approved ✓');
+  renderAdminPanel();
+}
+async function denyUser(id) {
+  await supabase.from('profiles').update({ status: 'denied' }).eq('id', id);
+  showToast('Request denied');
+  renderAdminPanel();
+}
+async function deleteUser(id, name) {
+  if (!confirm('Delete ' + name + '? They will no longer be able to log in.')) return;
+  await supabase.from('profiles').delete().eq('id', id);
+  // Also delete from Supabase auth (requires service role - mark as denied instead)
+  await supabase.auth.admin?.deleteUser(id).catch(() => {});
+  showToast(name + ' removed');
+  renderAdminPanel();
+}
+
+function getUserNames() {
+  return []; // populated dynamically from profiles
 }
 
 // ============================================================
@@ -681,7 +825,7 @@ function showPanel(id) {
   document.getElementById('panel-'+id).classList.add('active');
   const map = {dashboard:'Dashboard',equipment:'Equipment',tasks:'Tasks',schedule:'Schedule',parts:'Parts',reports:'Reports'};
   document.querySelectorAll('.nav-btn').forEach(b => { if(b.textContent===map[id]) b.classList.add('active'); });
-  const renders = {dashboard:renderDashboard,equipment:renderEquipmentTable,tasks:renderTasks,schedule:renderSchedule,parts:renderParts,reports:renderReports};
+  const renders = {dashboard:renderDashboard,equipment:renderEquipmentTable,tasks:renderTasks,schedule:renderSchedule,parts:renderParts,reports:renderReports,admin:renderAdminPanel};
   if(renders[id]) renders[id]();
 }
 
@@ -694,7 +838,8 @@ document.querySelectorAll('.modal-backdrop').forEach(m => m.addEventListener('cl
 
 function populateSelects() {
   const equipOpts = state.equipment.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
-  const techOpts  = getUserNames().map(n => `<option>${n}</option>`).join('');
+  // Build tech list from approved profiles if available, else empty
+  const techOpts = '';
   ['t-equip','s-equip'].forEach(id => { const el=document.getElementById(id); if(el)el.innerHTML=equipOpts; });
   ['t-assign','s-tech'].forEach(id => { const el=document.getElementById(id); if(el)el.innerHTML=techOpts; });
 }
