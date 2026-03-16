@@ -1009,7 +1009,7 @@ function openTaskDetail(id) {
     ${t.notes?`<div style="font-size:13px;color:var(--text2);background:var(--bg2);padding:9px 11px;border-radius:var(--radius);margin-bottom:12px">${t.notes}</div>`:''}
     <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Checklist (${done}/${t.checklist.length})</div>
     ${t.checklist.map((c,i)=>`<div class="check-item${c.done?' done':''}" onclick="toggleCheck('${t.id}',${i})">
-      <div class="check-box${c.done?' on'}">${c.done?'✓':''}</div><span class="check-label">${c.text}</span>
+      <div class="check-box" style="${c.done?'background:var(--text);border-color:var(--text);color:var(--bg)':''}">${c.done?'&#10003;':''}</div><span class="check-label">${c.text}</span>
     </div>`).join('')}
     ${photoHtml?`<div style="margin-top:12px"><div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Photos</div>${photoHtml}</div>`:''}
     <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
