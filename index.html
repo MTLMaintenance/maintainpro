@@ -561,39 +561,11 @@ function signOut() {
 // STATE & STORAGE
 // ============================================================
 const DEFAULTS = {
-  equipment: [
-    {id:'eq1',name:'CAT 320 Excavator',type:'Excavator',serial:'EXC-1042',hours:4320,status:'Operational',op:'Mike R.',notes:'',photos:[]},
-    {id:'eq2',name:'JD 6110M Tractor',type:'Tractor',serial:'TRC-0881',hours:2140,status:'In Service',op:'Tom B.',notes:'Annual service overdue',photos:[]},
-    {id:'eq3',name:'Komatsu WA380 Loader',type:'Wheel Loader',serial:'WL-0554',hours:6800,status:'Operational',op:'Sarah K.',notes:'',photos:[]},
-    {id:'eq4',name:'Bobcat S650 Skid Steer',type:'Skid Steer',serial:'SS-3310',hours:1890,status:'Down',op:'Dana L.',notes:'Hydraulic leak',photos:[]},
-    {id:'eq5',name:'Atlas Copco Compressor',type:'Compressor',serial:'CP-7721',hours:3200,status:'Standby',op:'Mike R.',notes:'',photos:[]},
-    {id:'eq6',name:'Grove RT550E Crane',type:'Crane',serial:'CR-1100',hours:5600,status:'Operational',op:'Sarah K.',notes:'',photos:[]},
-    {id:'eq7',name:'Wacker Plate Compactor',type:'Compactor',serial:'PC-0041',hours:320,status:'Operational',op:'Tom B.',notes:'',photos:[]},
-  ],
-  tasks: [
-    {id:'t1',name:'Oil & filter change',equipId:'eq1',assign:'Mike R.',priority:'High',due:'2025-03-10',cost:320,meter:'4300 hrs',status:'Overdue',notes:'',photos:[],checklist:[{text:'Drain engine oil',done:true},{text:'Replace oil filter',done:true},{text:'Top up coolant',done:false}]},
-    {id:'t2',name:'Annual hydraulic inspection',equipId:'eq2',assign:'Tom B.',priority:'Critical',due:'2025-03-05',cost:850,meter:'2100 hrs',status:'Overdue',notes:'Scheduled annual',photos:[],checklist:[{text:'Check hose fittings',done:false},{text:'Test pressure relief valve',done:false}]},
-    {id:'t3',name:'Bucket pin lubrication',equipId:'eq1',assign:'Mike R.',priority:'Medium',due:'2025-03-25',cost:40,meter:'4320 hrs',status:'Open',notes:'',photos:[],checklist:[{text:'Apply grease to pins',done:false}]},
-    {id:'t4',name:'Air filter replacement',equipId:'eq3',assign:'Sarah K.',priority:'Low',due:'2025-04-01',cost:120,meter:'6800 hrs',status:'Open',notes:'',photos:[],checklist:[{text:'Remove old filter',done:false},{text:'Fit new filter',done:false}]},
-    {id:'t5',name:'Hydraulic hose repair',equipId:'eq4',assign:'Dana L.',priority:'Critical',due:'2025-03-18',cost:640,meter:'1890 hrs',status:'Open',notes:'Left boom hose leaking',photos:[],checklist:[{text:'Identify leak point',done:true},{text:'Order replacement hose',done:true},{text:'Fit and pressure test',done:false}]},
-    {id:'t6',name:'500-hour service',equipId:'eq3',assign:'Sarah K.',priority:'High',due:'2025-02-20',cost:1100,meter:'6500 hrs',status:'Completed',notes:'Full service completed',photos:[],checklist:[{text:'Engine oil',done:true},{text:'Fuel filters',done:true},{text:'Greasing',done:true}]},
-  ],
-  schedules: [
-    {id:'s1',name:'500-hr Engine Service',equipId:'eq1',date:'2025-03-19',tech:'Mike R.',dur:4,notes:'Full engine service'},
-    {id:'s2',name:'Annual Safety Inspection',equipId:'eq2',date:'2025-03-20',tech:'Tom B.',dur:6,notes:''},
-    {id:'s3',name:'Hydraulic System Flush',equipId:'eq3',date:'2025-03-28',tech:'Sarah K.',dur:3,notes:''},
-    {id:'s4',name:'Crane Certification',equipId:'eq6',date:'2025-04-02',tech:'Sarah K.',dur:8,notes:'Annual cert renewal'},
-  ],
-  parts: [
-    {id:'p1',name:'Engine Oil Filter',num:'OF-320',qty:4,reorder:2,cost:28,supplier:'CAT Parts'},
-    {id:'p2',name:'Hydraulic Filter HF-200',num:'HF-200',qty:1,reorder:3,cost:55,supplier:'FluidPower Co'},
-    {id:'p3',name:'Air Filter A-400',num:'AF-400',qty:6,reorder:2,cost:42,supplier:'FilterMax'},
-    {id:'p4',name:'Hydraulic Hose 3/4"',num:'HH-750',qty:0,reorder:2,cost:180,supplier:'FluidPower Co'},
-    {id:'p5',name:'Engine Coolant 5L',num:'EC-5L',qty:8,reorder:4,cost:22,supplier:'General Supply'},
-    {id:'p6',name:'Grease Cartridge',num:'GC-LC3',qty:24,reorder:6,cost:8,supplier:'Lubritech'},
-    {id:'p7',name:'Fuel Filter FF-200',num:'FF-200',qty:1,reorder:3,cost:35,supplier:'FilterMax'},
-  ],
-  monthlyCosts:[840,1220,1420,1840],
+  equipment: [],
+  tasks: [],
+  schedules: [],
+  parts: [],
+  monthlyCosts: [0, 0, 0, 0],
 };
 
 let state = { equipment:[], tasks:[], schedules:[], parts:[], monthlyCosts:[] };
@@ -610,14 +582,12 @@ async function loadState() {
         supabase.from('schedules').select('*'),
         supabase.from('parts').select('*'),
       ]);
-      // If tables exist and have data, use them; else seed with defaults
-      state.equipment = (eq.data && eq.data.length) ? eq.data : DEFAULTS.equipment;
-      state.tasks     = (tk.data && tk.data.length) ? tk.data : DEFAULTS.tasks;
-      state.schedules = (sc.data && sc.data.length) ? sc.data : DEFAULTS.schedules;
-      state.parts     = (pt.data && pt.data.length) ? pt.data : DEFAULTS.parts;
-      state.monthlyCosts = DEFAULTS.monthlyCosts;
-      // If no data in DB yet, seed it
-      if (!eq.data || !eq.data.length) await seedDatabase();
+      // Always use whatever is in Supabase — never overwrite with defaults
+      state.equipment    = eq.data  || [];
+      state.tasks        = tk.data  || [];
+      state.schedules    = sc.data  || [];
+      state.parts        = pt.data  || [];
+      state.monthlyCosts = computeMonthlyCosts();
       setSyncStatus('online');
     } catch(e) {
       console.warn('Supabase load failed, using local fallback', e);
@@ -629,15 +599,16 @@ async function loadState() {
   }
 }
 
-async function seedDatabase() {
-  if (!supabase) return;
-  try {
-    await supabase.from('equipment').insert(DEFAULTS.equipment);
-    await supabase.from('tasks').insert(DEFAULTS.tasks);
-    await supabase.from('schedules').insert(DEFAULTS.schedules);
-    await supabase.from('parts').insert(DEFAULTS.parts);
-    state = { ...DEFAULTS, monthlyCosts: DEFAULTS.monthlyCosts };
-  } catch(e) { console.warn('Seed failed', e); }
+// Compute monthly costs from real task data
+function computeMonthlyCosts() {
+  const now = new Date();
+  return [3,2,1,0].map(monthsAgo => {
+    const d = new Date(now.getFullYear(), now.getMonth() - monthsAgo, 1);
+    const y = d.getFullYear(), m = d.getMonth();
+    return state.tasks
+      .filter(t => { if(!t.due) return false; const td = new Date(t.due); return td.getFullYear()===y && td.getMonth()===m; })
+      .reduce((a,t) => a + (t.cost||0), 0);
+  });
 }
 
 function loadLocal() {
@@ -650,6 +621,10 @@ function loadLocal() {
 
 function saveLocal() {
   try { localStorage.setItem('mp_state', JSON.stringify(state)); } catch {}
+}
+
+function refreshMonthlyCosts() {
+  state.monthlyCosts = computeMonthlyCosts();
 }
 
 async function persist(table, action, record) {
@@ -682,7 +657,7 @@ window.addEventListener('offline', () => { document.getElementById('offline-bann
 // ============================================================
 const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 const icons = {Excavator:'🦾',Tractor:'🚜','Wheel Loader':'⚙','Skid Steer':'🔧',Compressor:'💨',Crane:'🏗',Compactor:'🔩'};
-const today = new Date('2025-03-16');
+const today = new Date(); today.setHours(0,0,0,0);
 
 function fmtDate(d) { if(!d)return'—'; const dt=new Date(d); return dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); }
 function isOverdue(d) { return d && new Date(d) < today; }
@@ -1072,6 +1047,7 @@ async function saveTask() {
   };
   state.tasks.push(record);
   await persist('tasks','upsert',record);
+  refreshMonthlyCosts();
   pendingPhotos.task = [];
   closeModal('task-modal'); renderDashboard();
   ['t-name','t-due','t-cost','t-meter','t-checklist','t-notes'].forEach(id=>document.getElementById(id).value='');
