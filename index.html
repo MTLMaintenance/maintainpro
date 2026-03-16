@@ -1,0 +1,1210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>MaintainPro</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+/* ===================== RESET & BASE ===================== */
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-size:14px;background:#f5f5f3;color:#1a1a18}
+:root{
+  --bg:#ffffff;--bg2:#f5f5f3;--bg3:#eeede8;
+  --text:#1a1a18;--text2:#6b6b66;--text3:#9c9a92;
+  --border:rgba(0,0,0,0.1);--border2:rgba(0,0,0,0.18);
+  --accent:#185FA5;--accent-bg:#E6F1FB;--accent-text:#0C447C;
+  --danger:#E24B4A;--danger-bg:#FCEBEB;--danger-text:#A32D2D;
+  --warning:#BA7517;--warning-bg:#FAEEDA;--warning-text:#854F0B;
+  --success:#3B6D11;--success-bg:#EAF3DE;--success-text:#27500A;
+  --radius:8px;--radius-lg:12px;
+  --shadow:0 1px 3px rgba(0,0,0,.08),0 1px 2px rgba(0,0,0,.05);
+}
+@media(prefers-color-scheme:dark){:root{
+  --bg:#1c1c1a;--bg2:#242422;--bg3:#2c2c2a;
+  --text:#e8e6de;--text2:#9c9a92;--text3:#6b6b66;
+  --border:rgba(255,255,255,.1);--border2:rgba(255,255,255,.18);
+  --accent:#378ADD;--accent-bg:#042C53;--accent-text:#85B7EB;
+  --danger:#E24B4A;--danger-bg:#501313;--danger-text:#F09595;
+  --warning:#EF9F27;--warning-bg:#412402;--warning-text:#FAC775;
+  --success:#639922;--success-bg:#173404;--success-text:#C0DD97;
+}}
+
+/* ===================== LAYOUT ===================== */
+#app{display:flex;flex-direction:column;min-height:100vh}
+.topbar{display:flex;align-items:center;gap:12px;padding:0 16px;height:52px;background:var(--bg);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;flex-wrap:wrap}
+.logo{font-size:16px;font-weight:600;white-space:nowrap;display:flex;align-items:center;gap:6px}
+.logo-icon{font-size:20px}
+.nav{display:flex;gap:2px;flex:1;flex-wrap:wrap}
+.nav-btn{padding:5px 11px;border:1px solid transparent;border-radius:var(--radius);font-size:13px;cursor:pointer;background:transparent;color:var(--text2);transition:all .15s;white-space:nowrap}
+.nav-btn:hover{background:var(--bg2);color:var(--text)}
+.nav-btn.active{background:var(--bg3);color:var(--text);border-color:var(--border);font-weight:500}
+.topbar-right{display:flex;gap:6px;align-items:center;flex-shrink:0}
+.user-chip{font-size:11px;background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:3px 10px;color:var(--text2)}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:#3B6D11;display:inline-block;margin-right:4px}
+.sync-dot.syncing{background:var(--warning);animation:pulse 1s infinite}
+.sync-dot.offline{background:var(--danger)}
+
+/* ===================== BUTTONS ===================== */
+.btn{padding:6px 14px;border-radius:var(--radius);font-size:13px;cursor:pointer;font-family:inherit;transition:all .15s;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.btn-primary{background:var(--text);color:var(--bg);border:none;font-weight:500}
+.btn-primary:hover{opacity:.88}
+.btn-secondary{background:transparent;color:var(--text);border:1px solid var(--border2)}
+.btn-secondary:hover{background:var(--bg2)}
+.btn-danger{background:transparent;color:var(--danger-text);border:1px solid var(--danger);font-size:12px;padding:4px 9px}
+.btn-danger:hover{background:var(--danger-bg)}
+.btn-sm{padding:4px 9px;font-size:12px}
+.btn-icon{padding:5px 8px;font-size:14px}
+
+/* ===================== PANELS ===================== */
+.panel{display:none;padding:16px;max-width:1200px;margin:0 auto;width:100%}
+.panel.active{display:block}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;gap:8px;flex-wrap:wrap}
+.section-title{font-size:16px;font-weight:600}
+
+/* ===================== METRICS ===================== */
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-bottom:14px}
+.metric-card{background:var(--bg2);border-radius:var(--radius);padding:12px 14px}
+.metric-label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+.metric-value{font-size:24px;font-weight:600;line-height:1}
+.metric-sub{font-size:11px;color:var(--text3);margin-top:3px}
+.v-danger{color:var(--danger)}.v-warning{color:var(--warning)}.v-success{color:var(--success)}
+
+/* ===================== CARDS ===================== */
+.card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:12px}
+.card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;gap:8px}
+.card-title{font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.5px}
+.grid-2{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:12px}
+
+/* ===================== TABLES ===================== */
+.table-wrap{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:auto}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{text-align:left;font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;padding:8px 10px;border-bottom:1px solid var(--border);background:var(--bg2);white-space:nowrap}
+th:first-child{padding-left:16px}
+td{padding:9px 10px;border-bottom:1px solid var(--border);vertical-align:middle}
+td:first-child{padding-left:16px}
+tr:last-child td{border-bottom:none}
+tbody tr:hover td{background:var(--bg2);cursor:pointer}
+tbody tr.clickable:hover td{background:var(--bg2)}
+
+/* ===================== BADGES ===================== */
+.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:500}
+.bd{background:var(--danger-bg);color:var(--danger-text)}
+.bw{background:var(--warning-bg);color:var(--warning-text)}
+.bs{background:var(--success-bg);color:var(--success-text)}
+.bi{background:var(--accent-bg);color:var(--accent-text)}
+.bg{background:var(--bg3);color:var(--text2)}
+
+/* ===================== ALERTS ===================== */
+.alert{display:flex;align-items:center;gap:8px;padding:9px 13px;border-radius:var(--radius);font-size:13px;margin-bottom:8px}
+.alert-d{background:var(--danger-bg);color:var(--danger-text);border:1px solid var(--danger)}
+.alert-w{background:var(--warning-bg);color:var(--warning-text);border:1px solid var(--warning)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.dot{width:7px;height:7px;border-radius:50%;background:currentColor;display:inline-block;animation:pulse 1.6s infinite;flex-shrink:0}
+
+/* ===================== FORMS ===================== */
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-group{display:flex;flex-direction:column;gap:4px}
+.form-group.full{grid-column:1/-1}
+.form-label{font-size:12px;font-weight:500;color:var(--text2)}
+.form-input,.form-select,.form-textarea{padding:8px 10px;border:1px solid var(--border2);border-radius:var(--radius);font-size:13px;background:var(--bg);color:var(--text);font-family:inherit;transition:border-color .15s}
+.form-input:focus,.form-select:focus,.form-textarea:focus{outline:none;border-color:var(--accent)}
+.form-textarea{resize:vertical;min-height:68px}
+.form-row{display:flex;gap:8px;margin-top:16px;justify-content:flex-end}
+.form-hint{font-size:11px;color:var(--text3);margin-top:2px}
+
+/* ===================== EQUIP ROWS ===================== */
+.equip-row{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);cursor:pointer}
+.equip-row:last-child{border-bottom:none}
+.equip-icon{width:36px;height:36px;border-radius:var(--radius);background:var(--bg2);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;overflow:hidden}
+.equip-icon img{width:100%;height:100%;object-fit:cover}
+.equip-info{flex:1;min-width:0}
+.equip-name{font-weight:500;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.equip-meta{font-size:11px;color:var(--text2)}
+.progress-bar{height:3px;background:var(--bg3);border-radius:2px;margin-top:4px;overflow:hidden}
+.progress-fill{height:100%;border-radius:2px}
+
+/* ===================== SCHEDULE ===================== */
+.sched-item{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
+.sched-item:last-child{border-bottom:none}
+.sched-date{width:40px;text-align:center;flex-shrink:0}
+.sched-day{font-size:18px;font-weight:600;line-height:1}
+.sched-month{font-size:10px;color:var(--text2);text-transform:uppercase}
+.sched-body{flex:1}
+.sched-title{font-size:13px;font-weight:500}
+.sched-detail{font-size:11px;color:var(--text2);margin-top:2px}
+
+/* ===================== CHECKLIST ===================== */
+.check-item{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:1px solid var(--border);cursor:pointer;user-select:none}
+.check-item:last-child{border-bottom:none}
+.check-box{width:17px;height:17px;border:1.5px solid var(--border2);border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;transition:all .15s}
+.check-box.on{background:var(--text);border-color:var(--text);color:var(--bg)}
+.check-item.done .check-label{text-decoration:line-through;color:var(--text3)}
+
+/* ===================== PHOTOS ===================== */
+.photo-grid{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}
+.photo-thumb{width:72px;height:72px;border-radius:var(--radius);object-fit:cover;border:1px solid var(--border);cursor:pointer;transition:opacity .15s}
+.photo-thumb:hover{opacity:.85}
+.photo-add{width:72px;height:72px;border-radius:var(--radius);border:1.5px dashed var(--border2);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:22px;color:var(--text3);background:var(--bg2);transition:all .15s}
+.photo-add:hover{border-color:var(--accent);color:var(--accent)}
+
+/* ===================== MODAL ===================== */
+.modal-backdrop{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:300;align-items:center;justify-content:center;padding:16px}
+.modal-backdrop.open{display:flex}
+.modal{background:var(--bg);border-radius:var(--radius-lg);border:1px solid var(--border);padding:22px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.25)}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.modal-title{font-size:16px;font-weight:600}
+.modal-close{background:none;border:none;cursor:pointer;font-size:20px;color:var(--text2);line-height:1;padding:2px 6px;border-radius:var(--radius)}
+.modal-close:hover{background:var(--bg2)}
+
+/* ===================== AUTH ===================== */
+#auth-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px;background:var(--bg2)}
+.auth-card{background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-lg);padding:36px;width:100%;max-width:400px;box-shadow:var(--shadow)}
+.auth-logo{font-size:24px;font-weight:700;margin-bottom:4px;display:flex;align-items:center;gap:8px}
+.auth-sub{font-size:13px;color:var(--text2);margin-bottom:24px}
+.auth-divider{border:none;border-top:1px solid var(--border);margin:18px 0}
+.auth-hint{font-size:11px;color:var(--text3);text-align:center}
+.auth-switch{font-size:13px;color:var(--text2);text-align:center;margin-top:14px}
+.auth-switch a{color:var(--accent);cursor:pointer;text-decoration:none}
+.auth-err{font-size:12px;color:var(--danger-text);background:var(--danger-bg);border:1px solid var(--danger);padding:9px 11px;border-radius:var(--radius);margin-bottom:12px;display:none}
+
+/* ===================== SETUP BANNER ===================== */
+#setup-banner{background:var(--warning-bg);border:1px solid var(--warning);border-radius:var(--radius);padding:12px 16px;margin-bottom:14px;font-size:13px;color:var(--warning-text)}
+#setup-banner a{color:var(--accent);font-weight:500}
+
+/* ===================== BAR CHART ===================== */
+.bar-chart{display:flex;align-items:flex-end;gap:6px;height:90px}
+.bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px}
+.bar{width:100%;border-radius:3px 3px 0 0;transition:height .3s}
+.bar-label{font-size:10px;color:var(--text2)}
+.bar-val{font-size:10px;font-weight:600}
+
+/* ===================== PARTS ROW ===================== */
+.parts-row{display:flex;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px;gap:8px}
+.parts-row:last-child{border-bottom:none}
+
+/* ===================== TOAST ===================== */
+#toast{position:fixed;bottom:20px;right:20px;background:var(--text);color:var(--bg);border-radius:var(--radius);padding:9px 16px;font-size:13px;z-index:999;opacity:0;transition:opacity .3s;pointer-events:none;max-width:280px}
+#toast.show{opacity:1}
+
+/* ===================== PHOTO VIEWER ===================== */
+#photo-viewer{position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:500;display:none;align-items:center;justify-content:center}
+#photo-viewer.open{display:flex}
+#photo-viewer img{max-width:92vw;max-height:88vh;border-radius:var(--radius-lg)}
+#photo-viewer-close{position:absolute;top:16px;right:16px;background:rgba(255,255,255,.18);border:none;color:#fff;font-size:22px;cursor:pointer;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center}
+
+/* ===================== LOADING ===================== */
+.loading{display:flex;align-items:center;justify-content:center;padding:40px;color:var(--text2);font-size:13px;gap:10px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{width:18px;height:18px;border:2px solid var(--border2);border-top-color:var(--accent);border-radius:50%;animation:spin .7s linear infinite}
+
+/* ===================== RESPONSIVE ===================== */
+@media(max-width:600px){
+  .topbar{height:auto;padding:8px;gap:6px}
+  .nav{gap:1px}
+  .nav-btn{padding:5px 8px;font-size:12px}
+  .form-grid{grid-template-columns:1fr}
+  .form-group.full{grid-column:1}
+  .metrics{grid-template-columns:repeat(2,1fr)}
+  th,td{padding:6px 8px;font-size:12px}
+}
+
+/* ===================== OFFLINE BANNER ===================== */
+#offline-banner{display:none;background:var(--warning-bg);color:var(--warning-text);border-bottom:1px solid var(--warning);padding:7px 16px;font-size:12px;text-align:center}
+</style>
+</head>
+<body>
+
+<!-- ========== OFFLINE BANNER ========== -->
+<div id="offline-banner">⚠ You're offline — changes will sync when reconnected</div>
+
+<!-- ========== AUTH SCREEN ========== -->
+<div id="auth-screen">
+  <div class="auth-card">
+    <div class="auth-logo">⚙ MaintainPro</div>
+    <div class="auth-sub" id="auth-sub">Sign in to your team workspace</div>
+    <div class="auth-err" id="auth-err"></div>
+
+    <div id="setup-banner" style="display:none">
+      ⚙ <strong>First-time setup:</strong> Add your Supabase URL and key below, then <a href="#" onclick="saveSupabaseConfig()">save & connect</a>.
+      <div style="margin-top:10px;display:flex;flex-direction:column;gap:8px">
+        <input class="form-input" id="cfg-url" placeholder="https://xxxx.supabase.co" style="font-size:12px"/>
+        <input class="form-input" id="cfg-key" placeholder="Supabase anon key" style="font-size:12px"/>
+        <button class="btn btn-primary btn-sm" onclick="saveSupabaseConfig()" style="align-self:flex-start">Connect</button>
+      </div>
+      <hr class="auth-divider"/>
+      <div style="font-size:11px;color:var(--text3)">Or use offline mode (data saved locally only) — <a href="#" onclick="useOfflineMode()">continue offline</a></div>
+    </div>
+
+    <div id="auth-form">
+      <label class="form-label" style="display:block;margin-bottom:4px">Username</label>
+      <input class="form-input" id="auth-user" placeholder="Enter username" autocomplete="username" style="width:100%;margin-bottom:12px"/>
+      <label class="form-label" style="display:block;margin-bottom:4px">Password</label>
+      <input class="form-input" id="auth-pass" type="password" placeholder="Password" autocomplete="current-password" style="width:100%;margin-bottom:4px"/>
+      <div id="auth-name-wrap" style="display:none;margin-top:10px">
+        <label class="form-label" style="display:block;margin-bottom:4px">Full Name</label>
+        <input class="form-input" id="auth-name" placeholder="Your full name" style="width:100%"/>
+      </div>
+      <button class="btn btn-primary" id="auth-btn" onclick="authAction()" style="width:100%;margin-top:14px;justify-content:center">Sign In</button>
+      <div class="auth-switch" id="auth-switch">No account? <a onclick="toggleAuthMode()">Create one</a></div>
+      <hr class="auth-divider"/>
+      <div class="auth-hint">Demo: <strong>admin</strong> / admin123 &nbsp;·&nbsp; <strong>mike</strong> / pass123</div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== MAIN APP ========== -->
+<div id="app" style="display:none">
+  <div class="topbar">
+    <div class="logo"><span class="logo-icon">⚙</span>MaintainPro</div>
+    <nav class="nav">
+      <button class="nav-btn active" onclick="showPanel('dashboard')">Dashboard</button>
+      <button class="nav-btn" onclick="showPanel('equipment')">Equipment</button>
+      <button class="nav-btn" onclick="showPanel('tasks')">Tasks</button>
+      <button class="nav-btn" onclick="showPanel('schedule')">Schedule</button>
+      <button class="nav-btn" onclick="showPanel('parts')">Parts</button>
+      <button class="nav-btn" onclick="showPanel('reports')">Reports</button>
+    </nav>
+    <div class="topbar-right">
+      <span class="user-chip"><span class="sync-dot" id="sync-dot"></span><span id="user-chip-name"></span></span>
+      <button class="btn btn-secondary btn-sm" onclick="exportPDF()">PDF</button>
+      <button class="btn btn-secondary btn-sm" onclick="exportCSV()">CSV</button>
+      <button class="btn btn-primary btn-sm" onclick="openModal('task-modal')">+ Task</button>
+      <button class="btn btn-secondary btn-sm btn-icon" onclick="signOut()" title="Sign out">↩</button>
+    </div>
+  </div>
+
+  <!-- DASHBOARD -->
+  <div class="panel active" id="panel-dashboard">
+    <div id="alert-section"></div>
+    <div class="metrics">
+      <div class="metric-card"><div class="metric-label">Equipment</div><div class="metric-value" id="m-total">—</div><div class="metric-sub" id="m-total-sub"></div></div>
+      <div class="metric-card"><div class="metric-label">Overdue Tasks</div><div class="metric-value" id="m-overdue">—</div><div class="metric-sub">Needs attention</div></div>
+      <div class="metric-card"><div class="metric-label">This Month Cost</div><div class="metric-value" id="m-cost">—</div><div class="metric-sub" id="m-cost-sub"></div></div>
+      <div class="metric-card"><div class="metric-label">Parts Low Stock</div><div class="metric-value" id="m-parts">—</div><div class="metric-sub">Below reorder level</div></div>
+    </div>
+    <div class="grid-2" style="margin-bottom:12px">
+      <div class="card"><div class="card-header"><span class="card-title">Equipment Status</span><button class="btn btn-secondary btn-sm" onclick="showPanel('equipment')">View all</button></div><div id="equip-list-dash"></div></div>
+      <div class="card"><div class="card-header"><span class="card-title">Upcoming Maintenance</span><button class="btn btn-secondary btn-sm" onclick="showPanel('schedule')">Schedule</button></div><div id="sched-list-dash"></div></div>
+    </div>
+    <div class="grid-2">
+      <div class="card"><div class="card-header"><span class="card-title">Recent Tasks</span><span class="badge bg" id="task-count-badge"></span></div><div id="recent-tasks"></div></div>
+      <div class="card"><div class="card-header"><span class="card-title">Monthly Costs</span></div><div class="bar-chart" id="cost-chart"></div></div>
+    </div>
+  </div>
+
+  <!-- EQUIPMENT -->
+  <div class="panel" id="panel-equipment">
+    <div class="section-header"><span class="section-title">Equipment Registry</span><button class="btn btn-primary" onclick="openModal('equip-modal')">+ Add Equipment</button></div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Equipment</th><th>Status</th><th>Hours</th><th>Last Service</th><th>Next Due</th><th>Operator</th><th></th></tr></thead>
+      <tbody id="equip-table-body"></tbody>
+    </table></div>
+  </div>
+
+  <!-- TASKS -->
+  <div class="panel" id="panel-tasks">
+    <div class="section-header">
+      <span class="section-title">Maintenance Tasks</span>
+      <div style="display:flex;gap:8px;align-items:center">
+        <select class="form-select" id="task-filter" onchange="renderTasks()" style="font-size:12px;padding:5px 8px">
+          <option value="all">All Tasks</option><option value="overdue">Overdue</option><option value="open">Open</option><option value="completed">Completed</option>
+        </select>
+        <button class="btn btn-primary" onclick="openModal('task-modal')">+ Log Task</button>
+      </div>
+    </div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Task</th><th>Equipment</th><th>Priority</th><th>Assigned</th><th>Due Date</th><th>Cost</th><th>Status</th><th></th></tr></thead>
+      <tbody id="tasks-table-body"></tbody>
+    </table></div>
+  </div>
+
+  <!-- SCHEDULE -->
+  <div class="panel" id="panel-schedule">
+    <div class="section-header"><span class="section-title">Maintenance Schedule</span><button class="btn btn-primary" onclick="openModal('sched-modal')">+ Schedule Work</button></div>
+    <div class="grid-2">
+      <div class="card"><div class="card-header"><span class="card-title">This Week</span></div><div id="sched-week"></div></div>
+      <div class="card"><div class="card-header"><span class="card-title">Next 30 Days</span></div><div id="sched-month-list"></div></div>
+    </div>
+  </div>
+
+  <!-- PARTS -->
+  <div class="panel" id="panel-parts">
+    <div class="section-header"><span class="section-title">Parts & Inventory</span><button class="btn btn-primary" onclick="openModal('part-modal')">+ Add Part</button></div>
+    <div class="table-wrap"><table>
+      <thead><tr><th>Part Name</th><th>Part #</th><th>In Stock</th><th>Reorder At</th><th>Unit Cost</th><th>Total Value</th><th>Status</th><th></th></tr></thead>
+      <tbody id="parts-table-body"></tbody>
+    </table></div>
+  </div>
+
+  <!-- REPORTS -->
+  <div class="panel" id="panel-reports">
+    <div class="section-header"><span class="section-title">Reports & Summaries</span><div style="display:flex;gap:6px"><button class="btn btn-secondary btn-sm" onclick="exportPDF()">Export PDF</button><button class="btn btn-secondary btn-sm" onclick="exportCSV()">Export CSV</button></div></div>
+    <div class="metrics">
+      <div class="metric-card"><div class="metric-label">Total YTD Cost</div><div class="metric-value" id="r-ytd">$0</div><div class="metric-sub">All maintenance</div></div>
+      <div class="metric-card"><div class="metric-label">Avg Cost / Task</div><div class="metric-value" id="r-avg">$0</div><div class="metric-sub">Completed tasks</div></div>
+      <div class="metric-card"><div class="metric-label">Tasks Completed</div><div class="metric-value v-success" id="r-done">0</div><div class="metric-sub">This year</div></div>
+      <div class="metric-card"><div class="metric-label">Inventory Value</div><div class="metric-value" id="r-inv">$0</div><div class="metric-sub">Current stock</div></div>
+    </div>
+    <div class="grid-2">
+      <div class="card"><div class="card-header"><span class="card-title">Cost by Equipment</span></div><div id="cost-by-equip"></div></div>
+      <div class="card"><div class="card-header"><span class="card-title">Task Breakdown</span></div><div id="task-breakdown"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ========== MODALS ========== -->
+
+<!-- Task Modal -->
+<div class="modal-backdrop" id="task-modal">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title" id="task-modal-title">Log Maintenance Task</span><button class="modal-close" onclick="closeModal('task-modal')">✕</button></div>
+    <div class="form-grid">
+      <div class="form-group full"><label class="form-label">Task Name *</label><input class="form-input" id="t-name" placeholder="e.g. Oil filter replacement"/></div>
+      <div class="form-group"><label class="form-label">Equipment *</label><select class="form-select" id="t-equip"></select></div>
+      <div class="form-group"><label class="form-label">Assigned To</label><select class="form-select" id="t-assign"></select></div>
+      <div class="form-group"><label class="form-label">Priority</label><select class="form-select" id="t-priority"><option>Low</option><option>Medium</option><option selected>High</option><option>Critical</option></select></div>
+      <div class="form-group"><label class="form-label">Due Date</label><input class="form-input" id="t-due" type="date"/></div>
+      <div class="form-group"><label class="form-label">Estimated Cost ($)</label><input class="form-input" id="t-cost" type="number" min="0" placeholder="0"/></div>
+      <div class="form-group"><label class="form-label">Meter Reading</label><input class="form-input" id="t-meter" placeholder="e.g. 4320 hrs"/></div>
+      <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="t-status"><option>Open</option><option>Overdue</option><option>Completed</option></select></div>
+      <div class="form-group full"><label class="form-label">Checklist Items <span style="color:var(--text3)">(one per line)</span></label><textarea class="form-textarea" id="t-checklist" placeholder="Check oil level&#10;Replace filter&#10;Inspect belts"></textarea></div>
+      <div class="form-group full"><label class="form-label">Notes</label><textarea class="form-textarea" id="t-notes" placeholder="Additional notes..."></textarea></div>
+      <div class="form-group full">
+        <label class="form-label">Photos</label>
+        <div class="photo-grid" id="task-photo-grid">
+          <div class="photo-add" onclick="document.getElementById('task-photo-input').click()">+</div>
+          <input type="file" id="task-photo-input" accept="image/*" multiple style="display:none" onchange="handlePhotoUpload(this,'task')"/>
+        </div>
+      </div>
+    </div>
+    <div class="form-row"><button class="btn btn-secondary" onclick="closeModal('task-modal')">Cancel</button><button class="btn btn-primary" onclick="saveTask()">Save Task</button></div>
+  </div>
+</div>
+
+<!-- Equipment Modal -->
+<div class="modal-backdrop" id="equip-modal">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title">Add Equipment</span><button class="modal-close" onclick="closeModal('equip-modal')">✕</button></div>
+    <div class="form-grid">
+      <div class="form-group full"><label class="form-label">Equipment Name *</label><input class="form-input" id="e-name" placeholder="e.g. Caterpillar Excavator 320"/></div>
+      <div class="form-group"><label class="form-label">Type / Category</label><input class="form-input" id="e-type" placeholder="e.g. Excavator"/></div>
+      <div class="form-group"><label class="form-label">Serial / Asset #</label><input class="form-input" id="e-serial" placeholder="SN-00123"/></div>
+      <div class="form-group"><label class="form-label">Current Hours / Meter</label><input class="form-input" id="e-hours" type="number" min="0" placeholder="0"/></div>
+      <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="e-status"><option>Operational</option><option>In Service</option><option>Down</option><option>Standby</option></select></div>
+      <div class="form-group"><label class="form-label">Assigned Operator</label><input class="form-input" id="e-op" placeholder="Name"/></div>
+      <div class="form-group full"><label class="form-label">Notes</label><textarea class="form-textarea" id="e-notes" placeholder="Additional info..."></textarea></div>
+      <div class="form-group full">
+        <label class="form-label">Equipment Photo</label>
+        <div class="photo-grid" id="equip-photo-grid">
+          <div class="photo-add" onclick="document.getElementById('equip-photo-input').click()">+</div>
+          <input type="file" id="equip-photo-input" accept="image/*" style="display:none" onchange="handlePhotoUpload(this,'equip')"/>
+        </div>
+      </div>
+    </div>
+    <div class="form-row"><button class="btn btn-secondary" onclick="closeModal('equip-modal')">Cancel</button><button class="btn btn-primary" onclick="saveEquipment()">Add Equipment</button></div>
+  </div>
+</div>
+
+<!-- Schedule Modal -->
+<div class="modal-backdrop" id="sched-modal">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title">Schedule Maintenance</span><button class="modal-close" onclick="closeModal('sched-modal')">✕</button></div>
+    <div class="form-grid">
+      <div class="form-group full"><label class="form-label">Job Name *</label><input class="form-input" id="s-name" placeholder="e.g. 500-hour service"/></div>
+      <div class="form-group"><label class="form-label">Equipment</label><select class="form-select" id="s-equip"></select></div>
+      <div class="form-group"><label class="form-label">Scheduled Date</label><input class="form-input" id="s-date" type="date"/></div>
+      <div class="form-group"><label class="form-label">Technician</label><select class="form-select" id="s-tech"></select></div>
+      <div class="form-group"><label class="form-label">Est. Duration (hrs)</label><input class="form-input" id="s-dur" type="number" min="0" placeholder="2"/></div>
+      <div class="form-group full"><label class="form-label">Notes</label><textarea class="form-textarea" id="s-notes" placeholder="Special requirements..."></textarea></div>
+    </div>
+    <div class="form-row"><button class="btn btn-secondary" onclick="closeModal('sched-modal')">Cancel</button><button class="btn btn-primary" onclick="saveSched()">Schedule</button></div>
+  </div>
+</div>
+
+<!-- Part Modal -->
+<div class="modal-backdrop" id="part-modal">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title">Add Part</span><button class="modal-close" onclick="closeModal('part-modal')">✕</button></div>
+    <div class="form-grid">
+      <div class="form-group full"><label class="form-label">Part Name *</label><input class="form-input" id="p-name" placeholder="e.g. Hydraulic Filter HF200"/></div>
+      <div class="form-group"><label class="form-label">Part Number</label><input class="form-input" id="p-num" placeholder="HF-200-A"/></div>
+      <div class="form-group"><label class="form-label">Qty In Stock</label><input class="form-input" id="p-qty" type="number" min="0" placeholder="0"/></div>
+      <div class="form-group"><label class="form-label">Reorder At (qty)</label><input class="form-input" id="p-reorder" type="number" min="0" placeholder="2"/></div>
+      <div class="form-group"><label class="form-label">Unit Cost ($)</label><input class="form-input" id="p-cost" type="number" min="0" placeholder="0"/></div>
+      <div class="form-group"><label class="form-label">Supplier</label><input class="form-input" id="p-supplier" placeholder="Supplier name"/></div>
+    </div>
+    <div class="form-row"><button class="btn btn-secondary" onclick="closeModal('part-modal')">Cancel</button><button class="btn btn-primary" onclick="savePart()">Add Part</button></div>
+  </div>
+</div>
+
+<!-- Detail Modal -->
+<div class="modal-backdrop" id="detail-modal">
+  <div class="modal">
+    <div class="modal-header"><span class="modal-title" id="detail-title">Detail</span><button class="modal-close" onclick="closeModal('detail-modal')">✕</button></div>
+    <div id="detail-body"></div>
+  </div>
+</div>
+
+<!-- Photo Viewer -->
+<div id="photo-viewer" onclick="closePhotoViewer()">
+  <button id="photo-viewer-close" onclick="closePhotoViewer()">✕</button>
+  <img id="photo-viewer-img" src="" alt="Photo"/>
+</div>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<script>
+// ============================================================
+// SUPABASE CONFIG — REPLACE THESE WITH YOUR OWN VALUES
+// Get them from: supabase.com → your project → Settings → API
+// ============================================================
+const SUPABASE_CONFIG_KEY = 'mp_supabase_config';
+
+let supabase = null;
+let offlineMode = false;
+
+function getConfig() {
+  try { return JSON.parse(localStorage.getItem(SUPABASE_CONFIG_KEY) || 'null'); } catch { return null; }
+}
+function saveSupabaseConfig() {
+  const url = document.getElementById('cfg-url').value.trim();
+  const key = document.getElementById('cfg-key').value.trim();
+  if (!url || !key) { showErr('Please enter both URL and key.'); return; }
+  localStorage.setItem(SUPABASE_CONFIG_KEY, JSON.stringify({ url, key }));
+  initSupabase({ url, key });
+  document.getElementById('setup-banner').style.display = 'none';
+  document.getElementById('auth-form').style.display = 'block';
+  showToast('Connected to Supabase!');
+}
+function useOfflineMode() {
+  offlineMode = true;
+  document.getElementById('setup-banner').style.display = 'none';
+  document.getElementById('auth-form').style.display = 'block';
+}
+function initSupabase(cfg) {
+  try {
+    supabase = window.supabase.createClient(cfg.url, cfg.key);
+    setSyncStatus('online');
+  } catch(e) {
+    setSyncStatus('offline');
+  }
+}
+
+// Check for existing config on load
+(function() {
+  const cfg = getConfig();
+  if (cfg && cfg.url && cfg.url !== 'YOUR_SUPABASE_URL') {
+    initSupabase(cfg);
+    document.getElementById('auth-form').style.display = 'block';
+  } else {
+    document.getElementById('setup-banner').style.display = 'block';
+    document.getElementById('auth-form').style.display = 'none';
+  }
+})();
+
+// ============================================================
+// USERS & AUTH
+// ============================================================
+let currentUser = null;
+let authMode = 'login';
+
+const DEMO_USERS = [
+  { username:'admin', password:'admin123', name:'Admin User', role:'admin' },
+  { username:'mike',  password:'pass123',  name:'Mike R.',   role:'tech' },
+  { username:'sarah', password:'pass123',  name:'Sarah K.',  role:'tech' },
+  { username:'tom',   password:'pass123',  name:'Tom B.',    role:'tech' },
+  { username:'dana',  password:'pass123',  name:'Dana L.',   role:'tech' },
+];
+
+function getUsers() {
+  try { return JSON.parse(localStorage.getItem('mp_users') || 'null') || DEMO_USERS; } catch { return DEMO_USERS; }
+}
+function saveLocalUsers(u) { localStorage.setItem('mp_users', JSON.stringify(u)); }
+function getUserNames() { return getUsers().map(u => u.name); }
+
+function toggleAuthMode() {
+  authMode = authMode === 'login' ? 'register' : 'login';
+  document.getElementById('auth-btn').textContent = authMode === 'login' ? 'Sign In' : 'Create Account';
+  document.getElementById('auth-sub').textContent = authMode === 'login' ? 'Sign in to your team workspace' : 'Create a new account';
+  document.getElementById('auth-switch').innerHTML = authMode === 'login' ? 'No account? <a onclick="toggleAuthMode()">Create one</a>' : 'Have an account? <a onclick="toggleAuthMode()">Sign in</a>';
+  document.getElementById('auth-name-wrap').style.display = authMode === 'register' ? 'block' : 'none';
+  document.getElementById('auth-err').style.display = 'none';
+}
+function showErr(msg) { const e = document.getElementById('auth-err'); e.textContent = msg; e.style.display = 'block'; }
+
+function authAction() {
+  const user = document.getElementById('auth-user').value.trim();
+  const pass = document.getElementById('auth-pass').value;
+  document.getElementById('auth-err').style.display = 'none';
+  if (!user || !pass) { showErr('Please enter username and password.'); return; }
+
+  if (authMode === 'register') {
+    const name = document.getElementById('auth-name').value.trim() || user;
+    const users = getUsers();
+    if (users.find(u => u.username.toLowerCase() === user.toLowerCase())) { showErr('Username already taken.'); return; }
+    users.push({ username: user, password: pass, name, role: 'tech' });
+    saveLocalUsers(users);
+    login({ username: user, password: pass, name, role: 'tech' });
+  } else {
+    const found = getUsers().find(u => u.username.toLowerCase() === user.toLowerCase() && u.password === pass);
+    if (!found) { showErr('Invalid username or password.'); return; }
+    login(found);
+  }
+}
+document.getElementById('auth-pass').addEventListener('keydown', e => { if (e.key === 'Enter') authAction(); });
+
+async function login(u) {
+  currentUser = u;
+  document.getElementById('auth-screen').style.display = 'none';
+  document.getElementById('app').style.display = 'block';
+  document.getElementById('user-chip-name').textContent = u.name;
+  await loadState();
+  renderDashboard();
+}
+function signOut() {
+  currentUser = null;
+  document.getElementById('app').style.display = 'none';
+  document.getElementById('auth-screen').style.display = 'flex';
+}
+
+// ============================================================
+// STATE & STORAGE
+// ============================================================
+const DEFAULTS = {
+  equipment: [
+    {id:'eq1',name:'CAT 320 Excavator',type:'Excavator',serial:'EXC-1042',hours:4320,status:'Operational',op:'Mike R.',notes:'',photos:[]},
+    {id:'eq2',name:'JD 6110M Tractor',type:'Tractor',serial:'TRC-0881',hours:2140,status:'In Service',op:'Tom B.',notes:'Annual service overdue',photos:[]},
+    {id:'eq3',name:'Komatsu WA380 Loader',type:'Wheel Loader',serial:'WL-0554',hours:6800,status:'Operational',op:'Sarah K.',notes:'',photos:[]},
+    {id:'eq4',name:'Bobcat S650 Skid Steer',type:'Skid Steer',serial:'SS-3310',hours:1890,status:'Down',op:'Dana L.',notes:'Hydraulic leak',photos:[]},
+    {id:'eq5',name:'Atlas Copco Compressor',type:'Compressor',serial:'CP-7721',hours:3200,status:'Standby',op:'Mike R.',notes:'',photos:[]},
+    {id:'eq6',name:'Grove RT550E Crane',type:'Crane',serial:'CR-1100',hours:5600,status:'Operational',op:'Sarah K.',notes:'',photos:[]},
+    {id:'eq7',name:'Wacker Plate Compactor',type:'Compactor',serial:'PC-0041',hours:320,status:'Operational',op:'Tom B.',notes:'',photos:[]},
+  ],
+  tasks: [
+    {id:'t1',name:'Oil & filter change',equipId:'eq1',assign:'Mike R.',priority:'High',due:'2025-03-10',cost:320,meter:'4300 hrs',status:'Overdue',notes:'',photos:[],checklist:[{text:'Drain engine oil',done:true},{text:'Replace oil filter',done:true},{text:'Top up coolant',done:false}]},
+    {id:'t2',name:'Annual hydraulic inspection',equipId:'eq2',assign:'Tom B.',priority:'Critical',due:'2025-03-05',cost:850,meter:'2100 hrs',status:'Overdue',notes:'Scheduled annual',photos:[],checklist:[{text:'Check hose fittings',done:false},{text:'Test pressure relief valve',done:false}]},
+    {id:'t3',name:'Bucket pin lubrication',equipId:'eq1',assign:'Mike R.',priority:'Medium',due:'2025-03-25',cost:40,meter:'4320 hrs',status:'Open',notes:'',photos:[],checklist:[{text:'Apply grease to pins',done:false}]},
+    {id:'t4',name:'Air filter replacement',equipId:'eq3',assign:'Sarah K.',priority:'Low',due:'2025-04-01',cost:120,meter:'6800 hrs',status:'Open',notes:'',photos:[],checklist:[{text:'Remove old filter',done:false},{text:'Fit new filter',done:false}]},
+    {id:'t5',name:'Hydraulic hose repair',equipId:'eq4',assign:'Dana L.',priority:'Critical',due:'2025-03-18',cost:640,meter:'1890 hrs',status:'Open',notes:'Left boom hose leaking',photos:[],checklist:[{text:'Identify leak point',done:true},{text:'Order replacement hose',done:true},{text:'Fit and pressure test',done:false}]},
+    {id:'t6',name:'500-hour service',equipId:'eq3',assign:'Sarah K.',priority:'High',due:'2025-02-20',cost:1100,meter:'6500 hrs',status:'Completed',notes:'Full service completed',photos:[],checklist:[{text:'Engine oil',done:true},{text:'Fuel filters',done:true},{text:'Greasing',done:true}]},
+  ],
+  schedules: [
+    {id:'s1',name:'500-hr Engine Service',equipId:'eq1',date:'2025-03-19',tech:'Mike R.',dur:4,notes:'Full engine service'},
+    {id:'s2',name:'Annual Safety Inspection',equipId:'eq2',date:'2025-03-20',tech:'Tom B.',dur:6,notes:''},
+    {id:'s3',name:'Hydraulic System Flush',equipId:'eq3',date:'2025-03-28',tech:'Sarah K.',dur:3,notes:''},
+    {id:'s4',name:'Crane Certification',equipId:'eq6',date:'2025-04-02',tech:'Sarah K.',dur:8,notes:'Annual cert renewal'},
+  ],
+  parts: [
+    {id:'p1',name:'Engine Oil Filter',num:'OF-320',qty:4,reorder:2,cost:28,supplier:'CAT Parts'},
+    {id:'p2',name:'Hydraulic Filter HF-200',num:'HF-200',qty:1,reorder:3,cost:55,supplier:'FluidPower Co'},
+    {id:'p3',name:'Air Filter A-400',num:'AF-400',qty:6,reorder:2,cost:42,supplier:'FilterMax'},
+    {id:'p4',name:'Hydraulic Hose 3/4"',num:'HH-750',qty:0,reorder:2,cost:180,supplier:'FluidPower Co'},
+    {id:'p5',name:'Engine Coolant 5L',num:'EC-5L',qty:8,reorder:4,cost:22,supplier:'General Supply'},
+    {id:'p6',name:'Grease Cartridge',num:'GC-LC3',qty:24,reorder:6,cost:8,supplier:'Lubritech'},
+    {id:'p7',name:'Fuel Filter FF-200',num:'FF-200',qty:1,reorder:3,cost:35,supplier:'FilterMax'},
+  ],
+  monthlyCosts:[840,1220,1420,1840],
+};
+
+let state = { equipment:[], tasks:[], schedules:[], parts:[], monthlyCosts:[] };
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+
+async function loadState() {
+  if (supabase && !offlineMode) {
+    setSyncStatus('syncing');
+    try {
+      const [eq, tk, sc, pt] = await Promise.all([
+        supabase.from('equipment').select('*'),
+        supabase.from('tasks').select('*'),
+        supabase.from('schedules').select('*'),
+        supabase.from('parts').select('*'),
+      ]);
+      // If tables exist and have data, use them; else seed with defaults
+      state.equipment = (eq.data && eq.data.length) ? eq.data : DEFAULTS.equipment;
+      state.tasks     = (tk.data && tk.data.length) ? tk.data : DEFAULTS.tasks;
+      state.schedules = (sc.data && sc.data.length) ? sc.data : DEFAULTS.schedules;
+      state.parts     = (pt.data && pt.data.length) ? pt.data : DEFAULTS.parts;
+      state.monthlyCosts = DEFAULTS.monthlyCosts;
+      // If no data in DB yet, seed it
+      if (!eq.data || !eq.data.length) await seedDatabase();
+      setSyncStatus('online');
+    } catch(e) {
+      console.warn('Supabase load failed, using local fallback', e);
+      loadLocal();
+      setSyncStatus('offline');
+    }
+  } else {
+    loadLocal();
+  }
+}
+
+async function seedDatabase() {
+  if (!supabase) return;
+  try {
+    await supabase.from('equipment').insert(DEFAULTS.equipment);
+    await supabase.from('tasks').insert(DEFAULTS.tasks);
+    await supabase.from('schedules').insert(DEFAULTS.schedules);
+    await supabase.from('parts').insert(DEFAULTS.parts);
+    state = { ...DEFAULTS, monthlyCosts: DEFAULTS.monthlyCosts };
+  } catch(e) { console.warn('Seed failed', e); }
+}
+
+function loadLocal() {
+  try {
+    const s = localStorage.getItem('mp_state');
+    if (s) { const parsed = JSON.parse(s); state = { ...DEFAULTS, ...parsed }; }
+    else state = JSON.parse(JSON.stringify(DEFAULTS));
+  } catch { state = JSON.parse(JSON.stringify(DEFAULTS)); }
+}
+
+function saveLocal() {
+  try { localStorage.setItem('mp_state', JSON.stringify(state)); } catch {}
+}
+
+async function persist(table, action, record) {
+  saveLocal();
+  if (!supabase || offlineMode) { showToast('Saved locally'); return; }
+  setSyncStatus('syncing');
+  try {
+    if (action === 'upsert') await supabase.from(table).upsert(record);
+    if (action === 'delete') await supabase.from(table).delete().eq('id', record.id);
+    setSyncStatus('online');
+    showToast('Saved & synced ✓');
+  } catch(e) {
+    setSyncStatus('offline');
+    showToast('Saved locally (sync failed)');
+  }
+}
+
+function setSyncStatus(s) {
+  const dot = document.getElementById('sync-dot');
+  if (!dot) return;
+  dot.className = 'sync-dot ' + (s === 'syncing' ? 'syncing' : s === 'offline' ? 'offline' : '');
+}
+
+// Online/offline detection
+window.addEventListener('online',  () => { document.getElementById('offline-banner').style.display='none';  setSyncStatus('online');  });
+window.addEventListener('offline', () => { document.getElementById('offline-banner').style.display='block'; setSyncStatus('offline'); });
+
+// ============================================================
+// HELPERS
+// ============================================================
+const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const icons = {Excavator:'🦾',Tractor:'🚜','Wheel Loader':'⚙','Skid Steer':'🔧',Compressor:'💨',Crane:'🏗',Compactor:'🔩'};
+const today = new Date('2025-03-16');
+
+function fmtDate(d) { if(!d)return'—'; const dt=new Date(d); return dt.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); }
+function isOverdue(d) { return d && new Date(d) < today; }
+function equipName(id) { const e=state.equipment.find(x=>x.id===id); return e?e.name:'—'; }
+function badge(s) {
+  const m = {Operational:'bs','In Service':'bi',Down:'bd',Standby:'bg',Completed:'bs',Open:'bi',Overdue:'bd',Critical:'bd',High:'bw',Medium:'bi',Low:'bg'};
+  return `<span class="badge ${m[s]||'bg'}">${s}</span>`;
+}
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ============================================================
+// NAV
+// ============================================================
+function showPanel(id) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  const map = {dashboard:'Dashboard',equipment:'Equipment',tasks:'Tasks',schedule:'Schedule',parts:'Parts',reports:'Reports'};
+  document.querySelectorAll('.nav-btn').forEach(b => { if(b.textContent===map[id]) b.classList.add('active'); });
+  const renders = {dashboard:renderDashboard,equipment:renderEquipmentTable,tasks:renderTasks,schedule:renderSchedule,parts:renderParts,reports:renderReports};
+  if(renders[id]) renders[id]();
+}
+
+// ============================================================
+// MODALS
+// ============================================================
+function openModal(id) { populateSelects(); document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+document.querySelectorAll('.modal-backdrop').forEach(m => m.addEventListener('click', e => { if(e.target===m) m.classList.remove('open'); }));
+
+function populateSelects() {
+  const equipOpts = state.equipment.map(e => `<option value="${e.id}">${e.name}</option>`).join('');
+  const techOpts  = getUserNames().map(n => `<option>${n}</option>`).join('');
+  ['t-equip','s-equip'].forEach(id => { const el=document.getElementById(id); if(el)el.innerHTML=equipOpts; });
+  ['t-assign','s-tech'].forEach(id => { const el=document.getElementById(id); if(el)el.innerHTML=techOpts; });
+}
+
+// ============================================================
+// PHOTO UPLOAD
+// ============================================================
+let pendingPhotos = { task:[], equip:[] };
+
+function handlePhotoUpload(input, key) {
+  Array.from(input.files).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      pendingPhotos[key].push(e.target.result);
+      refreshPhotoGrid(key);
+    };
+    reader.readAsDataURL(file);
+  });
+  input.value = '';
+}
+function refreshPhotoGrid(key) {
+  const gridId = key === 'task' ? 'task-photo-grid' : 'equip-photo-grid';
+  const grid = document.getElementById(gridId);
+  const photos = pendingPhotos[key];
+  grid.innerHTML = photos.map(src => `<img class="photo-thumb" src="${src}" onclick="viewPhoto('${src}')"/>`).join('') +
+    `<div class="photo-add" onclick="document.getElementById('${key}-photo-input').click()">+</div>` +
+    `<input type="file" id="${key}-photo-input" accept="image/*" multiple style="display:none" onchange="handlePhotoUpload(this,'${key}')"/>`;
+}
+function viewPhoto(src) { document.getElementById('photo-viewer-img').src=src; document.getElementById('photo-viewer').classList.add('open'); }
+function closePhotoViewer() { document.getElementById('photo-viewer').classList.remove('open'); }
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+function renderDashboard() { renderAlerts(); renderEquipListDash(); renderSchedDash(); renderRecentTasks(); renderCostChart(); updateMetrics(); }
+
+function updateMetrics() {
+  const overdue = state.tasks.filter(t=>t.status==='Overdue').length;
+  const lowParts = state.parts.filter(p=>p.qty<=p.reorder).length;
+  const costs = state.monthlyCosts;
+  const cost = costs[costs.length-1];
+  const prev = costs[costs.length-2]||0;
+  const diff = cost-prev; const sign = diff>=0?'+':'';
+  document.getElementById('m-total').textContent = state.equipment.length;
+  document.getElementById('m-total-sub').textContent = state.equipment.filter(e=>e.status==='Operational').length+' operational';
+  document.getElementById('m-overdue').textContent = overdue;
+  document.getElementById('m-overdue').className = 'metric-value '+(overdue>0?'v-danger':'v-success');
+  document.getElementById('m-cost').textContent = '$'+cost.toLocaleString();
+  document.getElementById('m-cost-sub').textContent = sign+'$'+Math.abs(diff).toLocaleString()+' vs last month';
+  document.getElementById('m-parts').textContent = lowParts;
+  document.getElementById('m-parts').className = 'metric-value '+(lowParts>0?'v-danger':'v-success');
+}
+function renderAlerts() {
+  const od = state.tasks.filter(t=>t.status==='Overdue');
+  const lp = state.parts.filter(p=>p.qty<=p.reorder);
+  let h = '';
+  if(od.length) h += `<div class="alert alert-d"><span class="dot"></span><b>${od.length} overdue:</b> ${od.map(t=>t.name).join(', ')}</div>`;
+  if(lp.length) h += `<div class="alert alert-w">⚠ <b>${lp.length} part${lp.length>1?'s':''} low/out of stock:</b> ${lp.map(p=>p.name).join(', ')}</div>`;
+  document.getElementById('alert-section').innerHTML = h;
+}
+function renderEquipListDash() {
+  const el = document.getElementById('equip-list-dash');
+  el.innerHTML = state.equipment.slice(0,6).map(e => {
+    const col = e.status==='Down'?'var(--danger)':e.status==='In Service'?'var(--warning)':'var(--success)';
+    const pct = Math.round((e.hours%500)/5);
+    const iconHtml = e.photos&&e.photos.length ? `<img src="${e.photos[0]}"/>` : (icons[e.type]||'⚙');
+    return `<div class="equip-row" onclick="openEquipDetail('${e.id}')">
+      <div class="equip-icon">${iconHtml}</div>
+      <div class="equip-info">
+        <div class="equip-name">${e.name}</div>
+        <div class="equip-meta">${e.type} · ${e.op}</div>
+        <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${col}"></div></div>
+      </div>
+      <div style="text-align:right;flex-shrink:0">
+        <div style="font-size:12px;font-weight:600;margin-bottom:3px">${e.hours.toLocaleString()} hrs</div>
+        ${badge(e.status)}
+      </div>
+    </div>`;
+  }).join('');
+}
+function renderSchedDash() {
+  const el = document.getElementById('sched-list-dash');
+  const up = state.schedules.filter(s=>new Date(s.date)>=today).sort((a,b)=>new Date(a.date)-new Date(b.date)).slice(0,4);
+  el.innerHTML = up.map(s => {
+    const d = new Date(s.date);
+    return `<div class="sched-item">
+      <div class="sched-date"><div class="sched-day">${d.getDate()}</div><div class="sched-month">${d.toLocaleString('default',{month:'short'})}</div></div>
+      <div class="sched-body"><div class="sched-title">${s.name}</div><div class="sched-detail">${equipName(s.equipId)} · ${s.tech} · ${s.dur}h</div></div>
+    </div>`;
+  }).join('') || '<div style="color:var(--text2);font-size:13px;padding:8px 0">No upcoming maintenance</div>';
+}
+function renderRecentTasks() {
+  const recent = [...state.tasks].sort((a,b)=>new Date(b.due)-new Date(a.due)).slice(0,5);
+  document.getElementById('task-count-badge').textContent = state.tasks.length+' tasks';
+  document.getElementById('recent-tasks').innerHTML = recent.map(t =>
+    `<div class="parts-row" onclick="openTaskDetail('${t.id}')">
+      <div style="flex:1"><div style="font-weight:500">${t.name}</div><div style="font-size:11px;color:var(--text2)">${equipName(t.equipId)}</div></div>
+      ${badge(t.status)}<div style="font-size:12px;color:var(--text2);min-width:52px;text-align:right">$${(t.cost||0).toLocaleString()}</div>
+    </div>`
+  ).join('');
+}
+function renderCostChart() {
+  const el = document.getElementById('cost-chart');
+  const costs = state.monthlyCosts;
+  const max = Math.max(...costs,1);
+  const colors = ['#B5D4F4','#85B7EB','#378ADD','#185FA5'];
+  el.innerHTML = costs.map((v,i) =>
+    `<div class="bar-wrap">
+      <div class="bar-val">$${(v/1000).toFixed(1)}k</div>
+      <div class="bar" style="height:${Math.round(v/max*78)}px;background:${colors[Math.min(i,3)]}"></div>
+      <div class="bar-label">${months[i]}</div>
+    </div>`
+  ).join('');
+}
+
+// ============================================================
+// EQUIPMENT
+// ============================================================
+function renderEquipmentTable() {
+  document.getElementById('equip-table-body').innerHTML = state.equipment.map(e =>
+    `<tr onclick="openEquipDetail('${e.id}')">
+      <td><div style="display:flex;align-items:center;gap:9px">
+        <div class="equip-icon" style="width:32px;height:32px">${e.photos&&e.photos.length?`<img src="${e.photos[0]}"/>`:(icons[e.type]||'⚙')}</div>
+        <div><div style="font-weight:500">${e.name}</div><div style="font-size:11px;color:var(--text2)">${e.serial}</div></div>
+      </div></td>
+      <td>${badge(e.status)}</td>
+      <td><b>${e.hours.toLocaleString()}</b> hrs</td>
+      <td style="font-size:12px;color:var(--text2)">${getLastService(e.id)}</td>
+      <td style="font-size:12px">${getNextDue(e.id)}</td>
+      <td style="color:var(--text2)">${e.op}</td>
+      <td onclick="event.stopPropagation()"><button class="btn btn-danger" onclick="deleteEquip('${e.id}')">Delete</button></td>
+    </tr>`
+  ).join('');
+}
+function getLastService(id) {
+  const done = state.tasks.filter(t=>t.equipId===id&&t.status==='Completed');
+  return done.length ? fmtDate(done.sort((a,b)=>new Date(b.due)-new Date(a.due))[0].due) : '—';
+}
+function getNextDue(id) {
+  const open = state.tasks.filter(t=>t.equipId===id&&t.status!=='Completed');
+  if(!open.length) return '—';
+  const next = open.sort((a,b)=>new Date(a.due)-new Date(b.due))[0];
+  const col = isOverdue(next.due) ? 'color:var(--danger)' : '';
+  return `<span style="${col}">${fmtDate(next.due)}</span>`;
+}
+async function deleteEquip(id) {
+  if(!confirm('Delete this equipment and all associated tasks?')) return;
+  state.equipment = state.equipment.filter(e=>e.id!==id);
+  state.tasks = state.tasks.filter(t=>t.equipId!==id);
+  await persist('equipment','delete',{id});
+  renderEquipmentTable(); updateMetrics();
+}
+
+// ============================================================
+// TASKS
+// ============================================================
+function renderTasks() {
+  const f = document.getElementById('task-filter')?.value||'all';
+  let tasks = [...state.tasks];
+  if(f==='overdue') tasks = tasks.filter(t=>t.status==='Overdue');
+  if(f==='open')    tasks = tasks.filter(t=>t.status==='Open');
+  if(f==='completed') tasks = tasks.filter(t=>t.status==='Completed');
+  tasks.sort((a,b)=>{const ord={Overdue:0,Critical:1,Open:2,Completed:3}; return (ord[a.status]||2)-(ord[b.status]||2);});
+  document.getElementById('tasks-table-body').innerHTML = tasks.map(t =>
+    `<tr onclick="openTaskDetail('${t.id}')">
+      <td><div style="font-weight:500">${t.name}</div><div style="font-size:11px;color:var(--text2)">${t.meter||''}</div></td>
+      <td style="font-size:12px">${equipName(t.equipId)}</td>
+      <td>${badge(t.priority)}</td>
+      <td style="color:var(--text2)">${t.assign}</td>
+      <td style="color:${isOverdue(t.due)&&t.status!=='Completed'?'var(--danger)':'inherit'};font-size:12px">${fmtDate(t.due)}</td>
+      <td style="font-weight:600">$${(t.cost||0).toLocaleString()}</td>
+      <td>${badge(t.status)}</td>
+      <td onclick="event.stopPropagation()"><button class="btn btn-danger" onclick="deleteTask('${t.id}')">Del</button></td>
+    </tr>`
+  ).join('');
+}
+async function deleteTask(id) {
+  if(!confirm('Delete this task?')) return;
+  state.tasks = state.tasks.filter(t=>t.id!==id);
+  await persist('tasks','delete',{id});
+  renderTasks(); renderDashboard();
+}
+
+// ============================================================
+// SCHEDULE
+// ============================================================
+function renderSchedule() {
+  const nw = new Date(today); nw.setDate(nw.getDate()+7);
+  const n30 = new Date(today); n30.setDate(n30.getDate()+30);
+  const sorted = [...state.schedules].sort((a,b)=>new Date(a.date)-new Date(b.date));
+  const mkItem = s => {
+    const d = new Date(s.date);
+    return `<div class="sched-item">
+      <div class="sched-date"><div class="sched-day">${d.getDate()}</div><div class="sched-month">${d.toLocaleString('default',{month:'short'})}</div></div>
+      <div class="sched-body"><div class="sched-title">${s.name}</div><div class="sched-detail">${equipName(s.equipId)} · ${s.tech} · ${s.dur}h${s.notes?' · '+s.notes:''}</div></div>
+      <div style="display:flex;gap:4px;flex-shrink:0">
+        <button class="btn btn-secondary btn-sm" onclick="convertToTask('${s.id}')">→ Task</button>
+        <button class="btn btn-danger" onclick="deleteSched('${s.id}')">Del</button>
+      </div>
+    </div>`;
+  };
+  const none = '<div style="color:var(--text2);font-size:13px;padding:8px 0">Nothing scheduled</div>';
+  document.getElementById('sched-week').innerHTML      = sorted.filter(s=>new Date(s.date)>=today&&new Date(s.date)<=nw).map(mkItem).join('')||none;
+  document.getElementById('sched-month-list').innerHTML = sorted.filter(s=>new Date(s.date)>=today&&new Date(s.date)<=n30).map(mkItem).join('')||none;
+}
+async function deleteSched(id) {
+  state.schedules = state.schedules.filter(s=>s.id!==id);
+  await persist('schedules','delete',{id});
+  renderSchedule();
+}
+
+// ============================================================
+// PARTS
+// ============================================================
+function renderParts() {
+  document.getElementById('parts-table-body').innerHTML = state.parts.map(p => {
+    const out=p.qty===0, low=p.qty<=p.reorder;
+    return `<tr>
+      <td style="font-weight:500">${p.name}</td>
+      <td style="font-size:12px;color:var(--text2)">${p.num}</td>
+      <td style="font-weight:600;color:${out?'var(--danger)':low?'var(--warning)':'inherit'}">${p.qty}</td>
+      <td style="color:var(--text2)">${p.reorder}</td>
+      <td>$${p.cost}</td>
+      <td style="font-weight:600">$${(p.qty*p.cost).toLocaleString()}</td>
+      <td><span class="badge ${out?'bd':low?'bw':'bs'}">${out?'Out of Stock':low?'Low Stock':'In Stock'}</span></td>
+      <td onclick="event.stopPropagation()"><button class="btn btn-danger" onclick="deletePart('${p.id}')">Del</button></td>
+    </tr>`;
+  }).join('');
+}
+async function deletePart(id) {
+  if(!confirm('Delete this part?')) return;
+  state.parts = state.parts.filter(p=>p.id!==id);
+  await persist('parts','delete',{id});
+  renderParts(); updateMetrics();
+}
+
+// ============================================================
+// REPORTS
+// ============================================================
+function renderReports() {
+  document.getElementById('task-breakdown').innerHTML = '';
+  const completed = state.tasks.filter(t=>t.status==='Completed');
+  const total = state.tasks.reduce((a,t)=>a+(t.cost||0),0);
+  const avg = completed.length ? Math.round(total/completed.length) : 0;
+  const inv = state.parts.reduce((a,p)=>a+(p.qty*p.cost),0);
+  document.getElementById('r-ytd').textContent = '$'+total.toLocaleString();
+  document.getElementById('r-avg').textContent = '$'+avg.toLocaleString();
+  document.getElementById('r-done').textContent = completed.length;
+  document.getElementById('r-inv').textContent  = '$'+inv.toLocaleString();
+  const ec = state.equipment.map(e=>({name:e.name.split(' ').slice(0,2).join(' '),cost:state.tasks.filter(t=>t.equipId===e.id).reduce((a,t)=>a+(t.cost||0),0)})).filter(x=>x.cost>0).sort((a,b)=>b.cost-a.cost);
+  const mc = Math.max(...ec.map(x=>x.cost),1);
+  document.getElementById('cost-by-equip').innerHTML = ec.map(x =>
+    `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;font-size:12px">
+      <div style="width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text2)">${x.name}</div>
+      <div style="flex:1;background:var(--bg3);border-radius:2px;height:14px;overflow:hidden"><div style="height:100%;background:var(--accent);width:${Math.round(x.cost/mc*100)}%;border-radius:2px"></div></div>
+      <div style="width:56px;text-align:right;font-weight:600">$${x.cost.toLocaleString()}</div>
+    </div>`
+  ).join('');
+  const tot = state.tasks.length||1;
+  [['Completed',completed.length,'var(--success)'],['Open',state.tasks.filter(t=>t.status==='Open').length,'var(--accent)'],['Overdue',state.tasks.filter(t=>t.status==='Overdue').length,'var(--danger)']].forEach(([l,c,col]) => {
+    document.getElementById('task-breakdown').innerHTML += `<div style="display:flex;align-items:center;gap:8px;padding:5px 0;font-size:12px">
+      <div style="width:72px;color:var(--text2)">${l}</div>
+      <div style="flex:1;background:var(--bg3);border-radius:2px;height:14px;overflow:hidden"><div style="height:100%;background:${col};width:${Math.round(c/tot*100)}%;border-radius:2px"></div></div>
+      <div style="width:24px;text-align:right;font-weight:600">${c}</div>
+    </div>`;
+  });
+}
+
+// ============================================================
+// DETAIL VIEWS
+// ============================================================
+function openTaskDetail(id) {
+  const t = state.tasks.find(x=>x.id===id); if(!t)return;
+  document.getElementById('detail-title').textContent = t.name;
+  const done = t.checklist.filter(c=>c.done).length;
+  const photoHtml = t.photos&&t.photos.length ? `<div class="photo-grid">${t.photos.map(src=>`<img class="photo-thumb" src="${src}" onclick="viewPhoto('${src}')"/>`).join('')}</div>` : '';
+  document.getElementById('detail-body').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;font-size:13px">
+      <div><span style="color:var(--text2)">Equipment:</span> <b>${equipName(t.equipId)}</b></div>
+      <div><span style="color:var(--text2)">Assigned:</span> ${t.assign}</div>
+      <div><span style="color:var(--text2)">Priority:</span> ${badge(t.priority)}</div>
+      <div><span style="color:var(--text2)">Status:</span> ${badge(t.status)}</div>
+      <div><span style="color:var(--text2)">Due:</span> <span style="color:${isOverdue(t.due)&&t.status!=='Completed'?'var(--danger)':'inherit'}">${fmtDate(t.due)}</span></div>
+      <div><span style="color:var(--text2)">Cost:</span> <b>$${(t.cost||0).toLocaleString()}</b></div>
+      <div><span style="color:var(--text2)">Meter:</span> ${t.meter||'—'}</div>
+    </div>
+    ${t.notes?`<div style="font-size:13px;color:var(--text2);background:var(--bg2);padding:9px 11px;border-radius:var(--radius);margin-bottom:12px">${t.notes}</div>`:''}
+    <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Checklist (${done}/${t.checklist.length})</div>
+    ${t.checklist.map((c,i)=>`<div class="check-item${c.done?' done':''}" onclick="toggleCheck('${t.id}',${i})">
+      <div class="check-box${c.done?' on'}">${c.done?'✓':''}</div><span class="check-label">${c.text}</span>
+    </div>`).join('')}
+    ${photoHtml?`<div style="margin-top:12px"><div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Photos</div>${photoHtml}</div>`:''}
+    <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end">
+      ${t.status!=='Completed'?`<button class="btn btn-secondary" onclick="markComplete('${t.id}')">Mark Complete</button>`:''}
+      <button class="btn btn-primary" onclick="closeModal('detail-modal')">Close</button>
+    </div>`;
+  openModal('detail-modal');
+}
+function openEquipDetail(id) {
+  const e = state.equipment.find(x=>x.id===id); if(!e)return;
+  document.getElementById('detail-title').textContent = e.name;
+  const tasks = state.tasks.filter(t=>t.equipId===id);
+  const photoHtml = e.photos&&e.photos.length ? `<div class="photo-grid">${e.photos.map(src=>`<img class="photo-thumb" src="${src}" onclick="viewPhoto('${src}')"/>`).join('')}</div>` : '<div style="color:var(--text3);font-size:13px">No photos uploaded</div>';
+  document.getElementById('detail-body').innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;font-size:13px">
+      <div><span style="color:var(--text2)">Type:</span> ${e.type}</div>
+      <div><span style="color:var(--text2)">Serial:</span> ${e.serial}</div>
+      <div><span style="color:var(--text2)">Status:</span> ${badge(e.status)}</div>
+      <div><span style="color:var(--text2)">Hours:</span> <b>${e.hours.toLocaleString()} hrs</b></div>
+      <div><span style="color:var(--text2)">Operator:</span> ${e.op}</div>
+    </div>
+    ${e.notes?`<div style="font-size:13px;color:var(--text2);background:var(--bg2);padding:9px 11px;border-radius:var(--radius);margin-bottom:12px">${e.notes}</div>`:''}
+    <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">Photos</div>
+    ${photoHtml}
+    <div style="font-size:11px;font-weight:600;color:var(--text2);text-transform:uppercase;letter-spacing:.4px;margin:14px 0 6px">Task History (${tasks.length})</div>
+    ${tasks.length ? tasks.map(t=>`<div class="parts-row"><div style="flex:1"><div style="font-weight:500">${t.name}</div><div style="font-size:11px;color:var(--text2)">${fmtDate(t.due)} · $${t.cost||0}</div></div>${badge(t.status)}</div>`).join('') : '<div style="color:var(--text3);font-size:13px">No tasks logged</div>'}
+    <div style="margin-top:16px;text-align:right"><button class="btn btn-primary" onclick="closeModal('detail-modal')">Close</button></div>`;
+  openModal('detail-modal');
+}
+async function toggleCheck(taskId, idx) {
+  const t = state.tasks.find(x=>x.id===taskId); if(!t)return;
+  t.checklist[idx].done = !t.checklist[idx].done;
+  await persist('tasks','upsert',t);
+  openTaskDetail(taskId);
+}
+async function markComplete(taskId) {
+  const t = state.tasks.find(x=>x.id===taskId); if(!t)return;
+  t.status = 'Completed';
+  await persist('tasks','upsert',t);
+  closeModal('detail-modal'); renderDashboard();
+}
+
+// ============================================================
+// SAVE DATA
+// ============================================================
+async function saveTask() {
+  const name = document.getElementById('t-name').value.trim(); if(!name)return;
+  const record = {
+    id: uid(), name,
+    equipId:   document.getElementById('t-equip').value,
+    assign:    document.getElementById('t-assign').value,
+    priority:  document.getElementById('t-priority').value,
+    due:       document.getElementById('t-due').value,
+    cost:      parseFloat(document.getElementById('t-cost').value)||0,
+    meter:     document.getElementById('t-meter').value,
+    status:    document.getElementById('t-status').value,
+    notes:     document.getElementById('t-notes').value,
+    photos:    pendingPhotos.task.slice(),
+    checklist: document.getElementById('t-checklist').value.split('\n').filter(Boolean).map(text=>({text,done:false})),
+  };
+  state.tasks.push(record);
+  await persist('tasks','upsert',record);
+  pendingPhotos.task = [];
+  closeModal('task-modal'); renderDashboard();
+  ['t-name','t-due','t-cost','t-meter','t-checklist','t-notes'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('task-photo-grid').innerHTML='<div class="photo-add" onclick="document.getElementById(\'task-photo-input\').click()">+</div><input type="file" id="task-photo-input" accept="image/*" multiple style="display:none" onchange="handlePhotoUpload(this,\'task\')"/>';
+}
+async function saveEquipment() {
+  const name = document.getElementById('e-name').value.trim(); if(!name)return;
+  const record = {
+    id: uid(), name,
+    type:   document.getElementById('e-type').value,
+    serial: document.getElementById('e-serial').value,
+    hours:  parseInt(document.getElementById('e-hours').value)||0,
+    status: document.getElementById('e-status').value,
+    op:     document.getElementById('e-op').value,
+    notes:  document.getElementById('e-notes').value,
+    photos: pendingPhotos.equip.slice(),
+  };
+  state.equipment.push(record);
+  await persist('equipment','upsert',record);
+  pendingPhotos.equip = [];
+  closeModal('equip-modal'); renderEquipmentTable(); updateMetrics();
+  ['e-name','e-type','e-serial','e-hours','e-op','e-notes'].forEach(id=>document.getElementById(id).value='');
+}
+async function saveSched() {
+  const name = document.getElementById('s-name').value.trim(); if(!name)return;
+  const record = {
+    id: uid(), name,
+    equipId: document.getElementById('s-equip').value,
+    date:    document.getElementById('s-date').value,
+    tech:    document.getElementById('s-tech').value,
+    dur:     parseInt(document.getElementById('s-dur').value)||1,
+    notes:   document.getElementById('s-notes').value,
+  };
+  state.schedules.push(record);
+  await persist('schedules','upsert',record);
+  closeModal('sched-modal'); renderSchedule();
+  ['s-name','s-date','s-dur','s-notes'].forEach(id=>document.getElementById(id).value='');
+}
+async function savePart() {
+  const name = document.getElementById('p-name').value.trim(); if(!name)return;
+  const record = {
+    id: uid(), name,
+    num:      document.getElementById('p-num').value,
+    qty:      parseInt(document.getElementById('p-qty').value)||0,
+    reorder:  parseInt(document.getElementById('p-reorder').value)||0,
+    cost:     parseFloat(document.getElementById('p-cost').value)||0,
+    supplier: document.getElementById('p-supplier').value,
+  };
+  state.parts.push(record);
+  await persist('parts','upsert',record);
+  closeModal('part-modal'); renderParts(); updateMetrics();
+  ['p-name','p-num','p-qty','p-reorder','p-cost','p-supplier'].forEach(id=>document.getElementById(id).value='');
+}
+function convertToTask(schedId) {
+  const s = state.schedules.find(x=>x.id===schedId); if(!s)return;
+  document.getElementById('t-name').value  = s.name;
+  document.getElementById('t-due').value   = s.date;
+  document.getElementById('t-notes').value = s.notes;
+  populateSelects();
+  document.getElementById('t-equip').value = s.equipId;
+  openModal('task-modal');
+}
+
+// ============================================================
+// EXPORTS
+// ============================================================
+function exportCSV() {
+  const rows = [['Task','Equipment','Assign','Priority','Due','Cost','Status','Meter','Notes']];
+  state.tasks.forEach(t=>rows.push([t.name,equipName(t.equipId),t.assign,t.priority,t.due,t.cost,t.status,t.meter,t.notes]));
+  const csv = rows.map(r=>r.map(x=>`"${String(x||'').replace(/"/g,'""')}"`).join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = 'data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
+  a.download = 'maintainpro-'+new Date().toISOString().slice(0,10)+'.csv';
+  a.click(); showToast('CSV downloaded');
+}
+function exportPDF() {
+  const completed = state.tasks.filter(t=>t.status==='Completed');
+  const totalCost = state.tasks.reduce((a,t)=>a+(t.cost||0),0);
+  const invValue  = state.parts.reduce((a,p)=>a+(p.qty*p.cost),0);
+  const od = state.tasks.filter(t=>t.status==='Overdue');
+  const lp = state.parts.filter(p=>p.qty<=p.reorder);
+  const date = new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'});
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>MaintainPro Report</title>
+  <style>body{font-family:Arial,sans-serif;font-size:12px;color:#1a1a18;margin:0;padding:28px}
+  h1{font-size:22px;margin-bottom:3px}h2{font-size:14px;color:#185FA5;border-bottom:2px solid #185FA5;padding-bottom:4px;margin:22px 0 8px}
+  .meta{font-size:11px;color:#888;margin-bottom:18px}.kpis{display:flex;gap:10px;margin-bottom:18px;flex-wrap:wrap}
+  .kpi{background:#f5f5f3;border-radius:6px;padding:10px 14px;min-width:100px}.kpi-l{font-size:10px;text-transform:uppercase;color:#888;letter-spacing:.4px}
+  .kpi-v{font-size:20px;font-weight:700;margin-top:2px}
+  table{width:100%;border-collapse:collapse;margin-bottom:6px}th{font-size:10px;text-align:left;text-transform:uppercase;letter-spacing:.4px;color:#888;padding:5px 7px;border-bottom:2px solid #eee}
+  td{padding:6px 7px;border-bottom:1px solid #eee;font-size:12px}
+  .alert{background:#FAEEDA;border:1px solid #FAC775;border-radius:4px;padding:8px 12px;margin-bottom:8px;font-size:12px;color:#854F0B}
+  @media print{*{-webkit-print-color-adjust:exact}}</style></head><body>
+  <h1>⚙ MaintainPro — Maintenance Report</h1>
+  <div class="meta">Generated ${date} · ${currentUser?.name||'—'} · ${offlineMode?'Offline mode':'Cloud synced'}</div>
+  ${od.length?`<div class="alert">⚠ ${od.length} overdue task(s): ${od.map(t=>t.name).join(', ')}</div>`:''}
+  ${lp.length?`<div class="alert">⚠ ${lp.length} low/out-of-stock part(s): ${lp.map(p=>p.name).join(', ')}</div>`:''}
+  <div class="kpis">
+    <div class="kpi"><div class="kpi-l">Equipment</div><div class="kpi-v">${state.equipment.length}</div></div>
+    <div class="kpi"><div class="kpi-l">Total Tasks</div><div class="kpi-v">${state.tasks.length}</div></div>
+    <div class="kpi"><div class="kpi-l">Completed</div><div class="kpi-v" style="color:#3B6D11">${completed.length}</div></div>
+    <div class="kpi"><div class="kpi-l">Overdue</div><div class="kpi-v" style="color:#E24B4A">${od.length}</div></div>
+    <div class="kpi"><div class="kpi-l">Total Cost</div><div class="kpi-v">$${totalCost.toLocaleString()}</div></div>
+    <div class="kpi"><div class="kpi-l">Inventory</div><div class="kpi-v">$${invValue.toLocaleString()}</div></div>
+  </div>
+  <h2>Maintenance Tasks</h2>
+  <table><thead><tr><th>Task</th><th>Equipment</th><th>Assigned</th><th>Priority</th><th>Due Date</th><th>Cost</th><th>Status</th></tr></thead><tbody>
+  ${state.tasks.map(t=>`<tr><td>${t.name}</td><td>${equipName(t.equipId)}</td><td>${t.assign}</td><td>${t.priority}</td><td>${fmtDate(t.due)}</td><td>$${(t.cost||0).toLocaleString()}</td><td>${t.status}</td></tr>`).join('')}
+  </tbody></table>
+  <h2>Equipment Registry</h2>
+  <table><thead><tr><th>Name</th><th>Type</th><th>Serial</th><th>Hours</th><th>Status</th><th>Operator</th></tr></thead><tbody>
+  ${state.equipment.map(e=>`<tr><td>${e.name}</td><td>${e.type}</td><td>${e.serial}</td><td>${e.hours.toLocaleString()} hrs</td><td>${e.status}</td><td>${e.op}</td></tr>`).join('')}
+  </tbody></table>
+  <h2>Parts & Inventory</h2>
+  <table><thead><tr><th>Part Name</th><th>Part #</th><th>Qty</th><th>Reorder At</th><th>Unit Cost</th><th>Total Value</th></tr></thead><tbody>
+  ${state.parts.map(p=>`<tr><td>${p.name}</td><td>${p.num}</td><td>${p.qty}</td><td>${p.reorder}</td><td>$${p.cost}</td><td>$${(p.qty*p.cost).toLocaleString()}</td></tr>`).join('')}
+  </tbody></table>
+  <script>window.onload=()=>window.print()<\/script></body></html>`;
+  const w = window.open('','_blank');
+  if(w) { w.document.write(html); w.document.close(); }
+  else showToast('Allow popups to export PDF');
+}
+</script>
+</body>
+</html>
