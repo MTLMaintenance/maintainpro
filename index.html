@@ -263,9 +263,9 @@ body.dark-mode .btn-secondary{color:#e8e6de;border-color:#555}
   <div class="topbar">
     <div class="logo">⚙ MTL Maintenance</div>
     <div style="display:flex;gap:4px;flex-shrink:0" id="group-filter-bar">
-      <button class="btn btn-secondary btn-sm" id="grp-all" onclick="setGroup('all')" style="font-size:11px">All</button>
-      <button class="btn btn-secondary btn-sm" id="grp-outside" onclick="setGroup('outside')" style="font-size:11px">Outside</button>
-      <button class="btn btn-secondary btn-sm" id="grp-production" onclick="setGroup('production')" style="font-size:11px">Production</button>
+      <button class="btn btn-sm" id="grp-all" onclick="setGroup('all')" style="font-size:11px;background:#fff;color:#1a1a18;font-weight:700;border:1px solid #fff">All</button>
+      <button class="btn btn-sm" id="grp-outside" onclick="setGroup('outside')" style="font-size:11px;background:rgba(255,255,255,0.15);color:#fff;font-weight:500;border:1px solid rgba(255,255,255,0.6)">Outside</button>
+      <button class="btn btn-sm" id="grp-production" onclick="setGroup('production')" style="font-size:11px;background:rgba(255,255,255,0.15);color:#fff;font-weight:500;border:1px solid rgba(255,255,255,0.6)">Production</button>
     </div>
     <nav class="nav" id="main-nav">
       <button class="nav-btn active" onclick="showPanel('dashboard')">Dashboard</button>
@@ -3709,22 +3709,18 @@ async function sendCriticalObsNotification(obs, equipId) {
 // ============================================================
 function setGroup(group) {
   activeGroup = group;
-  // Update button styles
   ['all','outside','production'].forEach(g => {
     const btn = document.getElementById('grp-'+g);
     if(!btn) return;
-    btn.style.background = g===group ? 'rgba(255,255,255,0.35)' : '';
-    btn.style.color = g===group ? '#fff' : '';
-    btn.style.fontWeight = g===group ? '600' : '';
-    btn.style.borderColor = g===group ? 'rgba(255,255,255,0.6)' : '';
+    if(g===group) {
+      btn.style.background='#fff'; btn.style.color='#1a1a18';
+      btn.style.fontWeight='700'; btn.style.borderColor='#fff';
+    } else {
+      btn.style.background='rgba(255,255,255,0.15)'; btn.style.color='#fff';
+      btn.style.fontWeight='500'; btn.style.borderColor='rgba(255,255,255,0.6)';
+    }
   });
-  // Re-render current panel
-  const activePanel = document.querySelector('.panel.active');
-  if(activePanel) {
-    const id = activePanel.id.replace('panel-','');
-    const renders = {dashboard:renderDashboard,equipment:renderEquipmentTable,tasks:renderTasks,schedule:renderSchedule};
-    if(renders[id]) renders[id]();
-  }
+  renderDashboard();
 }
 
 function filterByGroup(items, equipIdKey='equipId') {
