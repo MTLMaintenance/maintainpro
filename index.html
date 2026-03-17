@@ -465,6 +465,15 @@ body.dark-mode .btn-secondary{color:#e8e6de;border-color:#555}
         <div class="form-group"><label class="form-label">Estimated Cost ($)</label><input class="form-input" id="t-cost" type="number" min="0" placeholder="0"/></div>
         <div class="form-group"><label class="form-label">Meter Reading</label><input class="form-input" id="t-meter" placeholder="e.g. 4320 hrs"/></div>
         <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="t-status"><option>Open</option><option>Overdue</option><option>Completed</option></select></div>
+        <div class="form-group"><label class="form-label">Overdue Email Reminder</label>
+          <select class="form-select" id="t-email-freq">
+            <option value="0">No reminders</option>
+            <option value="7" selected>Weekly (every 7 days)</option>
+            <option value="3">Every 3 days</option>
+            <option value="1">Daily</option>
+            <option value="14">Every 2 weeks</option>
+          </select>
+        </div>
         <div class="form-group full"><label class="form-label">Notes</label><textarea class="form-textarea" id="t-notes" placeholder="Additional notes..."></textarea></div>
       </div>
     </div>
@@ -1751,6 +1760,7 @@ async function saveTask(){
     meter:   document.getElementById('t-meter').value,
     status:  document.getElementById('t-status').value,
     notes:   document.getElementById('t-notes').value,
+    email_freq: parseInt(document.getElementById('t-email-freq')?.value||'7'),
     photos:  pendingPhotos.task.slice(),
     checklist: document.getElementById('t-checklist').value.split('\n').filter(Boolean).map(text=>{return {text,done:false}}),
   };
@@ -1778,6 +1788,7 @@ async function saveTask(){
   renderDashboard();
   // Reset form
   ['t-name','t-due','t-cost','t-meter','t-checklist','t-notes','wo-comment-input'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
+  const freqEl=document.getElementById('t-email-freq'); if(freqEl) freqEl.value='7';
   document.getElementById('task-photo-grid').innerHTML='<div class="photo-add" onclick="document.getElementById(\'task-photo-input\').click()">+</div><input type="file" id="task-photo-input" accept="image/*" multiple style="display:none" onchange="handlePhotoUpload(this,\'task\')"/>';
   document.getElementById('wo-parts-list').innerHTML='<div style="color:var(--text3);font-size:13px">No parts added yet</div>';
 }
@@ -2190,13 +2201,24 @@ Enter new reading (or cancel to skip):`);
 const OVERDUE_EMAIL_RECIPIENT = 'tannergalloway75@gmail.com';
 
 function scheduleOverdueCheck(task) {
-  // Store when each task was created so we can check 1 week later
+  const freqDays = task.email_freq !== undefined ? task.email_freq : 7;
+  if(freqDays === 0) return; // No reminders for this task
   try {
     const schedules = JSON.parse(localStorage.getItem('mp_email_schedule') || '{}');
-    if(!schedules[task.id]) {
-      const dueDate = new Date(task.due || Date.now());
-      const sendDate = new Date(dueDate.getTime() + 7*24*60*60*1000);
-      schedules[task.id] = { sendAt: sendDate.toISOString(), taskId: task.id, taskName: task.name };
+    const dueDate = new Date(task.due || Date.now());
+    // Calculate next send: due date + freq days, or now + freq days if already past due
+    const base = dueDate < new Date() ? new Date() : dueDate;
+    const sendDate = new Date(base.getTime() + freqDays*24*60*60*1000);
+    // Only update if no schedule yet, or if frequency changed
+    if(!schedules[task.id] || schedules[task.id].freqDays !== freqDays) {
+      schedules[task.id] = {
+        sendAt: sendDate.toISOString(),
+        taskId: task.id,
+        taskName: task.name,
+        freqDays,
+        equipName: equipName(task.equipId),
+        due: task.due,
+      };
       localStorage.setItem('mp_email_schedule', JSON.stringify(schedules));
     }
   } catch(e) {}
@@ -2210,8 +2232,16 @@ async function checkAndSendOverdueEmails() {
     for(const [taskId, info] of Object.entries(schedules)) {
       if(new Date(info.sendAt) <= now) {
         const task = state.tasks.find(t=>t.id===taskId);
-        if(task && task.status !== 'Completed') toSend.push(task);
-        delete schedules[taskId];
+        if(task && task.status !== 'Completed') {
+          toSend.push({ ...task, equipName: info.equipName||equipName(task.equipId) });
+          // Reschedule next reminder based on freq
+          const freqDays = info.freqDays || 7;
+          const nextSend = new Date(now.getTime() + freqDays*24*60*60*1000);
+          schedules[taskId] = { ...info, sendAt: nextSend.toISOString() };
+        } else {
+          // Task completed or gone — remove schedule
+          delete schedules[taskId];
+        }
       }
     }
     localStorage.setItem('mp_email_schedule', JSON.stringify(schedules));
@@ -2222,23 +2252,24 @@ async function checkAndSendOverdueEmails() {
 }
 
 async function sendOverdueEmailBatch(tasks) {
-  // Check we haven't sent a similar email in last 6 days (dedup)
   try {
-    const { data: recentEmails } = await window._mpdb.from('email_log')
-      .select('*').eq('type','overdue')
-      .gte('sent_at', new Date(Date.now()-6*24*60*60*1000).toISOString());
-    const recentIds = new Set((recentEmails||[]).flatMap(e=>e.task_ids||[]));
-    const newTasks = tasks.filter(t=>!recentIds.has(t.id));
-    if(!newTasks.length) return;
-    // Log the email
+    // Log the email send
     await window._mpdb.from('email_log').insert({
       id: uid(), type:'overdue', recipient: OVERDUE_EMAIL_RECIPIENT,
-      subject: 'MTL Maintenance — Overdue Work Orders',
-      task_ids: newTasks.map(t=>t.id),
+      subject: 'MTL Maintenance — ' + tasks.length + ' Overdue Work Order' + (tasks.length>1?'s':''),
+      task_ids: tasks.map(t=>t.id),
     });
-    // Show in-app notification to admin
+    // Call edge function if available
+    try {
+      await window._mpdb.functions.invoke('send-overdue-email', {
+        body: {
+          tasks: tasks.map(t=>({ name:t.name, equipName:t.equipName||equipName(t.equipId), due:t.due, priority:t.priority, freq:t.email_freq||7 })),
+          recipient: OVERDUE_EMAIL_RECIPIENT,
+        }
+      });
+    } catch(e) { console.log('Edge function not set up yet:', e); }
     if(currentUser?.role==='admin') {
-      showToast('📧 Overdue email queued for ' + OVERDUE_EMAIL_RECIPIENT);
+      showToast('📧 Overdue reminder sent to ' + OVERDUE_EMAIL_RECIPIENT);
     }
   } catch(e) { console.log('Email send error:', e); }
 }
