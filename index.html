@@ -281,8 +281,8 @@ body.dark-mode .btn-secondary{color:#e8e6de;border-color:#555}
     </nav>
     <div class="topbar-right">
       <span class="user-chip"><span class="sync-dot" id="sync-dot"></span><span id="user-chip-name"></span></span>
-      <button class="btn btn-secondary btn-sm" onclick="exportPDF()">PDF</button>
-      <button class="btn btn-secondary btn-sm" onclick="exportCSV()">CSV</button>
+      <button class="btn btn-secondary btn-sm" onclick="exportPDF()" style="color:#fff;border-color:rgba(255,255,255,0.5);background:rgba(255,255,255,0.15)">PDF</button>
+      <button class="btn btn-secondary btn-sm" onclick="exportCSV()" style="color:#fff;border-color:rgba(255,255,255,0.5);background:rgba(255,255,255,0.15)">CSV</button>
       <button class="btn btn-primary btn-sm" onclick="openModal('task-modal')">+ Work Order</button>
       <button class="btn btn-secondary btn-sm" onclick="toggleDarkMode()" id="dark-btn" title="Toggle dark mode">🌙</button>
       <button class="btn btn-secondary btn-sm" onclick="signOut()" title="Sign out">↩</button>
@@ -294,9 +294,9 @@ body.dark-mode .btn-secondary{color:#e8e6de;border-color:#555}
     <div id="alert-section"></div>
     <div style="display:flex;gap:6px;margin-bottom:12px;align-items:center;flex-wrap:wrap">
       <span style="font-size:12px;color:rgba(255,255,255,0.7);font-weight:500">Viewing:</span>
-      <button class="btn btn-secondary btn-sm active-group-btn" id="grp-all" onclick="setGroupFilter('all')" style="background:rgba(255,255,255,0.9);color:#1a1a18;font-weight:600">All</button>
-      <button class="btn btn-secondary btn-sm" id="grp-outside" onclick="setGroupFilter('outside')" style="background:rgba(255,255,255,0.2);color:#fff;border-color:rgba(255,255,255,0.3)">Outside</button>
-      <button class="btn btn-secondary btn-sm" id="grp-production" onclick="setGroupFilter('production')" style="background:rgba(255,255,255,0.2);color:#fff;border-color:rgba(255,255,255,0.3)">Production</button>
+      <button class="btn btn-secondary btn-sm active-group-btn" id="grp-all" onclick="setGroupFilter('all')" style="background:#fff;color:#1a1a18;font-weight:700;border-color:#fff">All</button>
+      <button class="btn btn-secondary btn-sm" id="grp-outside" onclick="setGroupFilter('outside')" style="background:rgba(255,255,255,0.15);color:#fff;border-color:#fff;font-weight:500">Outside</button>
+      <button class="btn btn-secondary btn-sm" id="grp-production" onclick="setGroupFilter('production')" style="background:rgba(255,255,255,0.15);color:#fff;border-color:#fff;font-weight:500">Production</button>
     </div>
     <div class="metrics">
       <div class="metric-card"><div class="metric-label">Equipment</div><div class="metric-value" id="m-total">—</div><div class="metric-sub" id="m-total-sub"></div></div>
@@ -345,9 +345,9 @@ body.dark-mode .btn-secondary{color:#e8e6de;border-color:#555}
   <div class="panel" id="panel-equipment">
     <div style="display:flex;gap:6px;margin-bottom:10px;align-items:center;flex-wrap:wrap">
       <span style="font-size:12px;color:rgba(255,255,255,0.7);font-weight:500">Filter:</span>
-      <button class="btn btn-secondary btn-sm" id="eq-grp-all" onclick="setEquipGroupFilter('all')" style="background:rgba(255,255,255,0.9);color:#1a1a18;font-weight:600">All</button>
-      <button class="btn btn-secondary btn-sm" id="eq-grp-outside" onclick="setEquipGroupFilter('outside')" style="background:rgba(255,255,255,0.2);color:#fff;border-color:rgba(255,255,255,0.3)">Outside</button>
-      <button class="btn btn-secondary btn-sm" id="eq-grp-production" onclick="setEquipGroupFilter('production')" style="background:rgba(255,255,255,0.2);color:#fff;border-color:rgba(255,255,255,0.3)">Production</button>
+      <button class="btn btn-secondary btn-sm" id="eq-grp-all" onclick="setEquipGroupFilter('all')" style="background:#fff;color:#1a1a18;font-weight:700;border-color:#fff">All</button>
+      <button class="btn btn-secondary btn-sm" id="eq-grp-outside" onclick="setEquipGroupFilter('outside')" style="background:rgba(255,255,255,0.15);color:#fff;border-color:#fff;font-weight:500">Outside</button>
+      <button class="btn btn-secondary btn-sm" id="eq-grp-production" onclick="setEquipGroupFilter('production')" style="background:rgba(255,255,255,0.15);color:#fff;border-color:#fff;font-weight:500">Production</button>
     </div>
     <div class="section-header"><span class="section-title">Equipment Registry</span>
       <div style="display:flex;gap:6px"><button class="btn btn-secondary btn-sm" onclick="exportEquipCSV()">Export CSV</button><span id="add-equip-btn-wrap"></span></div>
@@ -464,10 +464,10 @@ body.dark-mode .btn-secondary{color:#e8e6de;border-color:#555}
   <!-- ADMIN -->
   <div class="panel" id="panel-admin">
     <div class="section-header"><span class="section-title">User Management & Permissions</span></div>
-    <div class="tab-bar">
-      <button class="tab active" onclick="switchAdminTab('approvals',this)">Pending Approvals</button>
-      <button class="tab" onclick="switchAdminTab('users',this)">Active Users</button>
-      <button class="tab" onclick="switchAdminTab('permissions',this)">Permissions</button>
+    <div class="tab-bar" style="background:rgba(255,255,255,0.1);border-radius:var(--radius);padding:4px;border:none;gap:4px">
+      <button class="tab active" onclick="switchAdminTab('approvals',this)" style="color:#fff;background:rgba(255,255,255,0.25);font-weight:600;border:none">Pending Approvals</button>
+      <button class="tab" onclick="switchAdminTab('users',this)" style="color:rgba(255,255,255,0.8);border:none">Active Users</button>
+      <button class="tab" onclick="switchAdminTab('permissions',this)" style="color:rgba(255,255,255,0.8);border:none">Permissions</button>
     </div>
     <div id="admin-approvals">
       <div class="grid-2">
@@ -3343,8 +3343,16 @@ function switchAdminTab(tab, btn) {
     const el=document.getElementById(id); if(el) el.style.display='none';
   });
   document.getElementById('admin-'+tab).style.display='block';
-  document.querySelectorAll('#panel-admin .tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('#panel-admin .tab').forEach(b=>{
+    b.classList.remove('active');
+    b.style.background='transparent';
+    b.style.color='rgba(255,255,255,0.8)';
+    b.style.fontWeight='400';
+  });
   btn.classList.add('active');
+  btn.style.background='rgba(255,255,255,0.25)';
+  btn.style.color='#fff';
+  btn.style.fontWeight='600';
   if(tab==='users') renderUsersTable();
   if(tab==='permissions') renderPermissionsMatrix();
 }
@@ -3955,8 +3963,8 @@ function setGroupFilter(group) {
   ['all','outside','production'].forEach(g => {
     const btn = document.getElementById('grp-'+g);
     if(!btn) return;
-    if(g===group) { btn.style.background='rgba(255,255,255,0.9)'; btn.style.color='#1a1a18'; btn.style.fontWeight='600'; }
-    else { btn.style.background='rgba(255,255,255,0.2)'; btn.style.color='#fff'; btn.style.fontWeight='400'; }
+    if(g===group) { btn.style.background='#fff'; btn.style.color='#1a1a18'; btn.style.fontWeight='700'; btn.style.borderColor='#fff'; }
+    else { btn.style.background='rgba(255,255,255,0.15)'; btn.style.color='#fff'; btn.style.fontWeight='500'; btn.style.borderColor='#fff'; }
   });
   renderDashboard();
 }
@@ -3966,8 +3974,8 @@ function setEquipGroupFilter(group) {
   ['all','outside','production'].forEach(g => {
     const btn = document.getElementById('eq-grp-'+g);
     if(!btn) return;
-    if(g===group) { btn.style.background='rgba(255,255,255,0.9)'; btn.style.color='#1a1a18'; btn.style.fontWeight='600'; }
-    else { btn.style.background='rgba(255,255,255,0.2)'; btn.style.color='#fff'; btn.style.fontWeight='400'; }
+    if(g===group) { btn.style.background='#fff'; btn.style.color='#1a1a18'; btn.style.fontWeight='700'; btn.style.borderColor='#fff'; }
+    else { btn.style.background='rgba(255,255,255,0.15)'; btn.style.color='#fff'; btn.style.fontWeight='500'; btn.style.borderColor='#fff'; }
   });
   renderEquipmentTable();
 }
