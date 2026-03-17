@@ -430,8 +430,12 @@ tbody tr:hover td{background:rgba(245,245,243,0.6);cursor:pointer}
     <div id="wo-details">
       <div class="form-grid">
         <div class="form-group full"><label class="form-label">Work Order Name *</label><input class="form-input" id="t-name" placeholder="e.g. Oil filter replacement"/></div>
-        <div class="form-group"><label class="form-label">Equipment *</label><select class="form-select" id="t-equip"></select></div>
+        <div class="form-group"><label class="form-label">Equipment *</label><select class="form-select" id="t-equip" onchange="pullEquipSuppliers()"></select></div>
         <div class="form-group"><label class="form-label">Assigned To</label><select class="form-select" id="t-assign"></select></div>
+      <div class="form-group full" id="equip-suppliers-box" style="display:none">
+        <label class="form-label">Suppliers for this Equipment</label>
+        <div id="equip-suppliers-content" style="background:var(--accent-bg);border:1px solid var(--accent-text);border-radius:var(--radius);padding:10px 12px;font-size:13px"></div>
+      </div>
         <div class="form-group"><label class="form-label">Priority</label><select class="form-select" id="t-priority"><option>Low</option><option>Medium</option><option selected>High</option><option>Critical</option></select></div>
         <div class="form-group"><label class="form-label">Due Date</label><input class="form-input" id="t-due" type="date"/></div>
         <div class="form-group"><label class="form-label">Estimated Cost ($)</label><input class="form-input" id="t-cost" type="number" min="0" placeholder="0"/></div>
@@ -924,7 +928,7 @@ function showPanel(id){
 // ============================================================
 // MODALS
 // ============================================================
-function openModal(id){ populateSelects(); document.getElementById(id).classList.add('open'); }
+function openModal(id){ populateSelects(); document.getElementById(id).classList.add('open'); if(id==='task-modal'){ const box=document.getElementById('equip-suppliers-box'); if(box) box.style.display='none'; } }
 function closeModal(id){ document.getElementById(id).classList.remove('open'); }
 document.querySelectorAll('.modal-backdrop').forEach(m=>m.addEventListener('click',e=>{ if(e.target===m) m.classList.remove('open'); }));
 
@@ -941,6 +945,83 @@ function populateSelects(){
   // populate equip filter
   const ef=document.getElementById('task-equip-filter');
   if(ef) ef.innerHTML=`<option value="all">All Equipment</option>`+equipOpts;
+}
+
+// Pull suppliers related to selected equipment
+function pullEquipSuppliers(){
+  const equipId = document.getElementById('t-equip').value;
+  const box = document.getElementById('equip-suppliers-box');
+  const cont = document.getElementById('equip-suppliers-content');
+  if(!equipId){ box.style.display='none'; return; }
+  const equip = state.equipment.find(e=>e.id===equipId);
+
+  // Find all part_usage records for this equipment's work orders
+  const equipTaskIds = new Set(state.tasks.filter(t=>t.equipId===equipId).map(t=>t.id));
+  const usageForEquip = state.partUsage.filter(p=>equipTaskIds.has(p.task_id));
+
+  // Build a map: supplierId -> { supplier, parts used on this machine with total qty }
+  const supplierMap = {};
+  usageForEquip.forEach(u=>{
+    const part = state.parts.find(p=>p.id===u.part_id);
+    if(!part||!part.supplier_id) return;
+    if(!supplierMap[part.supplier_id]) supplierMap[part.supplier_id]={};
+    const key = part.name;
+    supplierMap[part.supplier_id][key] = (supplierMap[part.supplier_id][key]||0) + u.qty_used;
+  });
+
+  // Also include suppliers of parts on this machine even if no usage yet (parts linked to equip's WOs)
+  const equipPartIds = new Set(usageForEquip.map(u=>u.part_id));
+  state.parts.forEach(p=>{
+    if(equipPartIds.has(p.id) && p.supplier_id && !supplierMap[p.supplier_id]){
+      supplierMap[p.supplier_id]={};
+    }
+  });
+
+  const hasHistory = Object.keys(supplierMap).length > 0;
+
+  // If no history at all, fall back to showing all suppliers with their parts
+  let displayEntries = [];
+  if(hasHistory){
+    displayEntries = Object.entries(supplierMap).map(([sid, partsMap])=>({
+      supplier: state.suppliers.find(s=>s.id===sid),
+      partsMap,
+      hasUsage: Object.keys(partsMap).length>0
+    })).filter(e=>e.supplier);
+  } else {
+    // No history — show all suppliers with all their parts
+    displayEntries = state.suppliers.filter(s=>state.parts.some(p=>p.supplier_id===s.id)).map(s=>({
+      supplier: s,
+      partsMap: Object.fromEntries(state.parts.filter(p=>p.supplier_id===s.id).map(p=>[p.name,'in stock: '+p.qty])),
+      hasUsage: false
+    }));
+  }
+
+  if(!displayEntries.length){ box.style.display='none'; return; }
+
+  const title = hasHistory
+    ? `Suppliers & parts used on <b>${equip?.name||'this equipment'}</b>:`
+    : `Available suppliers — no work order history yet for <b>${equip?.name||'this equipment'}</b>:`;
+
+  cont.innerHTML = `<div style="margin-bottom:8px;color:var(--accent-text);font-size:12px">${title}</div>` +
+    displayEntries.map(({supplier:s, partsMap, hasUsage})=>{
+      const partLines = Object.entries(partsMap).map(([name,qty])=>
+        `<span style="display:inline-block;background:rgba(24,95,165,0.12);border-radius:3px;padding:1px 7px;margin:2px 3px 2px 0;font-size:11px">
+          ${name}${typeof qty==='number'?' × '+qty+' used':''}
+        </span>`
+      ).join('');
+      return `<div style="padding:8px 0;border-bottom:1px solid rgba(24,95,165,0.15)">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <div style="font-weight:600;flex:1">${s.name}</div>
+          ${s.phone?`<a href="tel:${s.phone}" style="color:var(--accent);font-size:12px;text-decoration:none;white-space:nowrap">📞 ${s.phone}</a>`:''}
+          ${s.email?`<a href="mailto:${s.email}" style="color:var(--accent);font-size:12px;text-decoration:none;white-space:nowrap;margin-left:6px">✉ Email</a>`:''}
+        </div>
+        ${s.contact?`<div style="font-size:11px;color:var(--text2);margin-bottom:4px">Contact: ${s.contact}</div>`:''}
+        <div style="margin-top:2px">${partLines||'<span style="font-size:11px;color:var(--text3)">No parts linked yet</span>'}</div>
+        ${hasUsage?`<div style="font-size:10px;color:var(--text3);margin-top:3px">Based on work order history for this machine</div>`:''}
+      </div>`;
+    }).join('');
+
+  box.style.display='block';
 }
 
 // WO Tab switching
@@ -1511,7 +1592,12 @@ async function toggleCheck(taskId,idx){
 }
 async function markComplete(taskId){
   const t=state.tasks.find(x=>x.id===taskId); if(!t)return;
-  t.status='Completed'; await persist('tasks','upsert',t);
+  t.status='Completed';
+  if(t.photos&&t.photos.length){
+    t.photos=[];
+    showToast('Work order completed — photos cleared to save storage ✓');
+  }
+  await persist('tasks','upsert',t);
   closeModal('detail-modal'); renderDashboard();
 }
 
