@@ -2511,34 +2511,6 @@ const _origEnterApp = enterApp;
 // PATCH: renderEquipmentTable — add QR button for admin
 // ============================================================
 const _origRenderEquipmentTable = renderEquipmentTable;
-function renderEquipmentTable() {
-  document.getElementById('equip-table-body').innerHTML=state.equipment.map(e=>{
-    const score=calcHealth(e.id);
-    const icon=e.photos&&e.photos.length?`<img src="${e.photos[0]}" style="width:100%;height:100%;object-fit:cover"/>` : (ICONS[e.type]||'⚙');
-    const budgetAlert = (e.monthly_budget||e.yearly_budget) ? checkBudgetAlerts().some(a=>a.includes(e.name)) ? '⚠' : '' : '';
-    return `<tr onclick="openEquipDetail('${e.id}')">
-      <td><div style="display:flex;align-items:center;gap:9px">
-        <div class="equip-icon" style="width:32px;height:32px">${icon}</div>
-        <div><div style="font-weight:500">${e.name} ${budgetAlert}</div><div style="font-size:11px;color:var(--text2)">${e.serial}</div></div>
-      </div></td>
-      <td>${badge(e.status)}</td>
-      <td><b>${e.hours.toLocaleString()}</b> hrs</td>
-      <td>
-        <div class="health-bar"><div class="health-fill" style="width:${score}%;background:${healthColor(score)}"></div></div>
-        <span style="font-size:11px;color:${healthColor(score)};font-weight:600">${score}%</span>
-      </td>
-      <td style="color:var(--text2);font-size:12px">${(e.assigned_users||[]).join(', ')||e.op||'—'}</td>
-      <td style="font-size:12px;color:var(--text2)">${getLastService(e.id)}</td>
-      <td style="font-size:12px">${getNextDue(e.id)}</td>
-      <td onclick="event.stopPropagation()">
-        <div style="display:flex;gap:4px">
-          ${currentUser?.role==='admin'?`<button class="btn btn-secondary btn-sm" onclick="printQRCode('${e.id}')" title="Print QR Code">QR</button>`:''}
-          <button class="btn btn-danger" onclick="deleteEquip('${e.id}')">Del</button>
-        </div>
-      </td>
-    </tr>`;
-  }).join('');
-}
 
 
 
