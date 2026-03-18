@@ -1698,9 +1698,13 @@ async function openTaskDetail(id){
 }
 
 function switchDetailTab(tab, btn){
-  ['dt-info','dt-checklist','dt-parts','dt-comments','dt-photos'].forEach(id=>{ const el=document.getElementById(id); if(el) el.style.display='none'; });
+  // Hide all possible tab content divs (both WO tabs and equipment tabs)
+  ['dt-info','dt-checklist','dt-parts','dt-comments','dt-photos',
+   'eq-info','eq-photos','eq-custom','eq-downtime','eq-obs'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.style.display='none';
+  });
   const el=document.getElementById(tab); if(el) el.style.display='block';
-  document.querySelectorAll('#detail-body .tab').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('#detail-modal .tab').forEach(b=>b.classList.remove('active'));
   btn.classList.add('active');
 }
 
@@ -1750,6 +1754,7 @@ function openEquipDetail(id){
     <div id="eq-info">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;font-size:13px">
         <div><span style="color:var(--text2)">Type:</span> ${e.type}</div>
+        <div><span style="color:var(--text2)">Manufacturer:</span> ${e.manufacturer||'—'}</div>
         <div><span style="color:var(--text2)">Serial:</span> ${e.serial}</div>
         <div><span style="color:var(--text2)">Status:</span> ${badge(e.status)}</div>
         <div><span style="color:var(--text2)">Hours:</span> <b>${e.hours.toLocaleString()} hrs</b></div>
@@ -2522,6 +2527,7 @@ async function saveEquipment() {
     assigned_users: assignedUsers,
     custom_fields: customFieldsTemp,
     health_score: 100,
+    manufacturer: document.getElementById('e-manufacturer')?.value.trim()||'',
     group_tag: document.getElementById('e-group')?.value||'outside',
     monthly_budget: parseFloat(document.getElementById('e-budget-monthly')?.value)||0,
     yearly_budget:  parseFloat(document.getElementById('e-budget-yearly')?.value)||0,
@@ -3063,13 +3069,14 @@ const PARTS_CATALOG_URLS = {
   'terex':      'https://www.terex.com/en/products/services/parts',
 };
 
-function getPartsCatalogUrl(equipName, equipType) {
-  const text = (equipName + ' ' + (equipType||'')).toLowerCase();
+function getPartsCatalogUrl(equipName, equipType, manufacturer) {
+  const text = ((manufacturer||'') + ' ' + equipName + ' ' + (equipType||'')).toLowerCase();
   for(const[brand, url] of Object.entries(PARTS_CATALOG_URLS)) {
     if(text.includes(brand)) return url;
   }
   // Fallback — Google search
-  return 'https://www.google.com/search?q=' + encodeURIComponent(equipName + ' parts catalog');
+  const searchTerm = (manufacturer||equipName) + ' parts catalog';
+  return 'https://www.google.com/search?q=' + encodeURIComponent(searchTerm);
 }
 
 function openPartsCatalog(equipId) {
@@ -3080,7 +3087,7 @@ function openPartsCatalog(equipId) {
   }
   const equip = state.equipment.find(e=>e.id===equipId);
   if(!equip) return;
-  const url = getPartsCatalogUrl(equip.name, equip.type);
+  const url = getPartsCatalogUrl(equip.name, equip.type, equip.manufacturer);
   window.open(url, '_blank');
 }
 
