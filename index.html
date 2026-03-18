@@ -3258,8 +3258,11 @@ function renderOnlineUsers(){
 // ── BUG / SUGGESTION BUTTON ──────────────────────────────────
 
 async function submitBugReport(){
-  const title=document.getElementById('bug-title').value.trim();const desc=document.getElementById('bug-desc').value.trim();
-  if(!title||!desc){showToast('Please fill in the required fields');return;}
+  const isBugCheck=document.getElementById('type-bug').checked;
+  const title=isBugCheck?document.getElementById('bug-title').value.trim():'Suggestion';
+  const desc=document.getElementById('bug-desc').value.trim();
+  if(!desc){showToast('Please fill in the required fields');return;}
+  if(isBugCheck&&!document.getElementById('bug-title').value.trim()){showToast('Please fill in the required fields');return;}
   const isBug=document.getElementById('type-bug').checked;
   const report={id:uid(),reporter:currentUser?.name||'Unknown',username:currentUser?.username||'',type:isBug?'bug':'suggestion',title,description:desc,page:isBug?document.getElementById('bug-page').value:'N/A',severity:isBug?document.getElementById('bug-severity').value:'suggestion',steps:document.getElementById('bug-steps').value,user_agent:navigator.userAgent,created_at:new Date().toISOString(),status:'open'};
   try{await window._mpdb.from('bug_reports').insert(report);}catch(e){}
@@ -6313,12 +6316,24 @@ function updateReportType(){
   const pw=document.getElementById('bug-page-wrap'),de=document.getElementById('bug-desc'),te=document.getElementById('bug-title');
   const bl=document.getElementById('type-bug-label'),sugl=document.getElementById('type-sug-label');
   if(isBug){
-    if(tl)tl.textContent='What were you trying to do? *';if(dl)dl.textContent='What happened? *';if(sl)sl.textContent='Steps to reproduce (optional)';
-    if(pw)pw.style.display='flex';if(de)de.placeholder='Describe what went wrong...';if(te)te.placeholder='e.g. Adding a new work order';
+    if(tl)tl.textContent='What were you trying to do? *';if(dl)dl.textContent='What happened? *';
+    if(sl){sl.parentElement.style.display='block';}
+    if(pw)pw.style.display='flex';
+    // Show severity row
+    const sevWrap=document.getElementById('bug-severity')?.closest('.form-group');if(sevWrap)sevWrap.style.display='block';
+    if(de)de.placeholder='Describe what went wrong — the more detail the better...';
+    if(te){te.style.display='block';te.placeholder='e.g. Adding a new work order';}
+    if(tl)tl.style.display='block';
     if(bl)bl.style.borderColor='var(--accent)';if(sugl)sugl.style.borderColor='var(--border2)';
   }else{
-    if(tl)tl.textContent="What's your suggestion? *";if(dl)dl.textContent='Describe your idea *';if(sl)sl.textContent='Any other details (optional)';
-    if(pw)pw.style.display='none';if(de)de.placeholder='Tell us more about your idea...';if(te)te.placeholder='e.g. Add ability to export to Excel';
+    // Suggestion — just one field
+    if(tl)tl.style.display='none';
+    if(te)te.style.display='none';
+    if(pw)pw.style.display='none';
+    const sevWrap=document.getElementById('bug-severity')?.closest('.form-group');if(sevWrap)sevWrap.style.display='none';
+    if(sl){sl.parentElement.style.display='none';}
+    if(dl)dl.textContent='What would you like to add or change in the app? *';
+    if(de)de.placeholder='Describe your idea...';
     if(bl)bl.style.borderColor='var(--border2)';if(sugl)sugl.style.borderColor='var(--accent)';
   }
 }
