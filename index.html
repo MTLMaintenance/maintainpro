@@ -2539,14 +2539,60 @@ state.checklistTemplates=[
   {id:'tpl-skid',name:'Skid Steer — Daily',model:'General',type:'Skid Steer',items:['Check engine oil','Check hydraulic fluid','Check coolant','Check fuel','Inspect tyres or tracks','Check quick attach','Inspect hydraulic hoses','Grease lubrication points','Test lights and alarm','Test seat bar','Test all controls','Log hours']},
   {id:'tpl-crane',name:'Crane — Daily Pre-Op',model:'General',type:'Crane',items:['Check engine oil','Check hydraulic fluid','Check coolant','Check fuel','Inspect wire rope','Inspect hook and latch','Check load block','Inspect boom','Check outriggers','Test limit switches','Test load indicator','Inspect hydraulic hoses','Grease all points','Test all controls','Verify lift certification','Log hours']},
 ];
-(function(){try{const s=JSON.parse(localStorage.getItem('mp_tpl')||'null');if(s){const ids=new Set(state.checklistTemplates.map(t=>t.id));s.forEach(t=>{if(!ids.has(t.id))state.checklistTemplates.push(t);});}}catch(e){}})();
-(function(){try{state.downtimeLog=JSON.parse(localStorage.getItem('mp_downtime')||'[]');}catch(e){}})();
+// Templates now loaded from Supabase in loadState
+// Downtime log now loaded from Supabase in loadState
 
 // Patch loadState to also load observations
 const _baseLoadState = loadState;
 async function loadState() {
   await _baseLoadState();
   try{const obs=await window._mpdb.from('observations').select('*').order('created_at',{ascending:false});state.observations=obs.data||[];}catch(e){}
+  // Load downtime log from Supabase
+  try{
+    const{data:dtLog}=await window._mpdb.from('downtime_log').select('*').order('created_at',{ascending:true});
+    if(dtLog&&dtLog.length){
+      state.downtimeLog=dtLog.map(d=>({
+        id:d.id,equipId:d.equip_id,status:d.status,
+        startedAt:d.started_at,endedAt:d.ended_at,downtimeMins:d.downtime_mins
+      }));
+    }
+  }catch(e){
+    // Fallback to localStorage
+    try{state.downtimeLog=JSON.parse(localStorage.getItem('mp_downtime')||'[]');}catch(e2){}
+  }
+  // Load checklist templates from Supabase
+  try{
+    const{data:tpls}=await window._mpdb.from('checklist_templates').select('*').order('created_at',{ascending:true});
+    if(tpls&&tpls.length){
+      // Merge Supabase templates with built-in ones
+      const builtInIds=new Set(state.checklistTemplates.map(t=>t.id));
+      tpls.forEach(t=>{
+        const parsed={...t,items:typeof t.items==='string'?JSON.parse(t.items):t.items};
+        if(builtInIds.has(t.id)){
+          // Update built-in with saved version
+          const idx=state.checklistTemplates.findIndex(x=>x.id===t.id);
+          if(idx>-1)state.checklistTemplates[idx]=parsed;
+        } else {
+          state.checklistTemplates.push(parsed);
+        }
+      });
+    }
+  }catch(e){
+    // Fallback to localStorage
+    try{const s=JSON.parse(localStorage.getItem('mp_tpl')||'null');if(s){const ids=new Set(state.checklistTemplates.map(t=>t.id));s.forEach(t=>{if(!ids.has(t.id))state.checklistTemplates.push(t);});}}catch(e2){}
+  }
+  // Load custom permissions from Supabase
+  try{
+    if(currentUser){
+      const{data:perms}=await window._mpdb.from('user_permissions').select('*');
+      if(perms&&perms.length){
+        // Apply saved permissions to PERMISSIONS object
+        perms.forEach(p=>{
+          const role=state.equipment; // placeholder - handled in profiles
+        });
+      }
+    }
+  }catch(e){}
 }
 
 // ── DOWNTIME ─────────────────────────────────────────────────
@@ -2555,8 +2601,20 @@ function getEquipDowntime(equipId){const entries=state.downtimeLog.filter(d=>d.e
 async function logStatusChange(equipId,oldStatus,newStatus){
   if(oldStatus===newStatus)return;
   const now=new Date().toISOString();
-  if(newStatus==='Down'){state.downtimeLog.push({id:uid(),equipId,status:'started',startedAt:now,endedAt:null});}
-  else if(oldStatus==='Down'){const open=state.downtimeLog.find(d=>d.equipId===equipId&&d.status==='started'&&!d.endedAt);if(open){open.endedAt=now;open.status='resolved';open.downtimeMins=Math.round((new Date(now)-new Date(open.startedAt))/60000);showToast('Downtime: '+formatDuration(open.downtimeMins));}}
+  if(newStatus==='Down'){
+    const entry={id:uid(),equipId,status:'started',startedAt:now,endedAt:null,downtimeMins:0};
+    state.downtimeLog.push(entry);
+    try{await window._mpdb.from('downtime_log').insert({id:entry.id,equip_id:equipId,status:'started',started_at:now});}catch(e){}
+  } else if(oldStatus==='Down'){
+    const open=state.downtimeLog.find(d=>d.equipId===equipId&&d.status==='started'&&!d.endedAt);
+    if(open){
+      open.endedAt=now;open.status='resolved';
+      open.downtimeMins=Math.round((new Date(now)-new Date(open.startedAt))/60000);
+      showToast('Downtime: '+formatDuration(open.downtimeMins));
+      try{await window._mpdb.from('downtime_log').update({status:'resolved',ended_at:now,downtime_mins:open.downtimeMins}).eq('id',open.id);}catch(e){}
+    }
+  }
+  // Keep localStorage as backup
   try{localStorage.setItem('mp_downtime',JSON.stringify(state.downtimeLog));}catch(e){}
 }
 async function updateEquipStatus(equipId,newStatus){const equip=state.equipment.find(e=>e.id===equipId);if(!equip)return;const old=equip.status;equip.status=newStatus;await logStatusChange(equipId,old,newStatus);await persist('equipment','upsert',equip);renderEquipmentTable();renderDashboard();}
@@ -2611,15 +2669,19 @@ function previewTemplate(id){
   document.getElementById('detail-body').innerHTML=`<div style="margin-bottom:12px">${tpl.model?`<span class="badge bi" style="margin-right:4px">${tpl.model}</span>`:''} ${tpl.type?`<span class="badge bg">${tpl.type}</span>`:''}</div>${tpl.items.map((item,i)=>`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px"><div style="width:20px;height:20px;border:1px solid var(--border2);border-radius:4px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text3)">${i+1}</div>${item}</div>`).join('')}<div style="margin-top:14px;text-align:right"><button class="btn btn-primary" onclick="closeModal('detail-modal')">Close</button></div>`;
   openModal('detail-modal');
 }
-function saveTpl(){
+async function saveTpl(){
   const name=document.getElementById('tpl-name').value.trim();if(!name){showToast('Enter a name');return;}
   const items=document.getElementById('tpl-items').value.split('\n').filter(Boolean);if(!items.length){showToast('Add checklist items');return;}
   const tpl={id:'tpl-'+uid(),name,model:document.getElementById('tpl-model').value.trim(),type:document.getElementById('tpl-type').value.trim(),items};
-  state.checklistTemplates.push(tpl);try{localStorage.setItem('mp_tpl',JSON.stringify(state.checklistTemplates));}catch(e){}
+  state.checklistTemplates.push(tpl);
+  try{await window._mpdb.from('checklist_templates').insert({...tpl,items:JSON.stringify(tpl.items)});}catch(e){
+    // Fallback to localStorage
+    try{localStorage.setItem('mp_tpl',JSON.stringify(state.checklistTemplates));}catch(e2){}
+  }
   closeModal('tpl-modal');renderChecklistTemplates();showToast('Template saved ✓');
   ['tpl-name','tpl-model','tpl-type','tpl-items'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
 }
-function deleteTpl(id){if(!confirm('Delete this template?'))return;state.checklistTemplates=state.checklistTemplates.filter(t=>t.id!==id);try{localStorage.setItem('mp_tpl',JSON.stringify(state.checklistTemplates));}catch(e){}renderChecklistTemplates();showToast('Template deleted');}
+async function deleteTpl(id){if(!confirm('Delete this template?'))return;state.checklistTemplates=state.checklistTemplates.filter(t=>t.id!==id);try{await window._mpdb.from('checklist_templates').delete().eq('id',id);}catch(e){try{localStorage.setItem('mp_tpl',JSON.stringify(state.checklistTemplates));}catch(e2){}}renderChecklistTemplates();showToast('Template deleted');}
 function applyTemplate(){
   const tplId=document.getElementById('tpl-selector')?.value;if(!tplId){showToast('Select a template first');return;}
   const tpl=state.checklistTemplates.find(t=>t.id===tplId);if(!tpl)return;
@@ -2718,7 +2780,22 @@ let editingUserId=null,editingUserRole=null,editingPerms={};
 function openUserPerms(userId,userName,userRole,customPerms){editingUserId=userId;editingUserRole=userRole;editingPerms={...PERMISSIONS[userRole]||PERMISSIONS.tech,...(customPerms||{})};document.getElementById('user-perms-title').textContent=userName+' — Permissions';document.getElementById('user-perms-role').textContent=userRole;renderUserPermsList();openModal('user-perms-modal');}
 function renderUserPermsList(){const rd=PERMISSIONS[editingUserRole]||PERMISSIONS.tech;document.getElementById('user-perms-list').innerHTML=Object.entries(PERM_LABELS).map(([key,label])=>{const def=!!(rd[key]),cur=!!(editingPerms[key]),ov=cur!==def;return`<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)"><div style="flex:1"><div style="font-size:13px;font-weight:500">${label}</div><div style="font-size:11px;color:var(--text3)">Default: ${def?'✅':'❌'}${ov?' <span style="color:var(--warning)">● Override</span>':''}</div></div><label style="display:flex;align-items:center;gap:8px;cursor:pointer;flex-shrink:0;margin-left:12px"><span style="font-size:12px;color:${cur?'var(--success)':'var(--danger)'};font-weight:600;min-width:60px;text-align:right">${cur?'Allowed':'Denied'}</span><div style="position:relative;width:40px;height:22px;flex-shrink:0"><input type="checkbox" ${cur?'checked':''} onchange="editingPerms['${key}']=this.checked;renderUserPermsList()" style="position:absolute;opacity:0;width:100%;height:100%;cursor:pointer;margin:0;z-index:2"/><div style="width:40px;height:22px;border-radius:11px;background:${cur?'#3B6D11':'#E24B4A'};position:absolute;top:0;left:0"></div><div style="width:16px;height:16px;border-radius:50%;background:#fff;position:absolute;top:3px;left:${cur?'21px':'3px'};transition:left .2s;pointer-events:none"></div></div></label></div>`;}).join('');}
 function resetUserPerms(){editingPerms={...PERMISSIONS[editingUserRole]||PERMISSIONS.tech};renderUserPermsList();showToast('Reset to defaults');}
-async function saveUserPerms(){try{const rd=PERMISSIONS[editingUserRole]||PERMISSIONS.tech;const ho=Object.entries(editingPerms).some(([k,v])=>v!==rd[k]);await window._mpdb.from('profiles').update({custom_permissions:ho?editingPerms:null}).eq('id',editingUserId);showToast('Permissions saved ✓');closeModal('user-perms-modal');renderUsersTable();}catch(e){showToast('Failed');}}
+async function saveUserPerms(){
+  try{
+    const rd=PERMISSIONS[editingUserRole]||PERMISSIONS.tech;
+    const ho=Object.entries(editingPerms).some(([k,v])=>v!==rd[k]);
+    const permsToSave=ho?editingPerms:null;
+    // Save to profiles (primary)
+    await window._mpdb.from('profiles').update({custom_permissions:permsToSave}).eq('id',editingUserId);
+    // Also save to user_permissions table (backup)
+    if(permsToSave){
+      await window._mpdb.from('user_permissions').upsert({username:editingUserRole,custom_permissions:permsToSave,updated_at:new Date().toISOString()});
+    } else {
+      await window._mpdb.from('user_permissions').delete().eq('username',editingUserId);
+    }
+    showToast('Permissions saved ✓');closeModal('user-perms-modal');renderUsersTable();
+  }catch(e){showToast('Failed');}
+}
 function togglePermission(role,permission,value){if(role==='admin')return;PERMISSIONS[role][permission]=value;try{const c={};['manager','tech','viewer'].forEach(r=>{c[r]={...PERMISSIONS[r]};});localStorage.setItem('mp_permissions',JSON.stringify(c));}catch(e){}showToast('Updated ✓');}
 function renderPermissionsMatrix(){const perms=Object.entries(PERM_LABELS);const roles=['admin','manager','tech','viewer'];document.getElementById('permissions-table-body').innerHTML=perms.map(([key,label])=>`<tr><td style="padding-left:16px;font-weight:500">${label}</td>${roles.map(role=>`<td style="text-align:center">${role==='admin'?'✅':`<input type="checkbox" ${PERMISSIONS[role]?.[key]?'checked':''} onchange="togglePermission('${role}','${key}',this.checked)" style="width:16px;height:16px;cursor:pointer"/>`}</td>`).join('')}</tr>`).join('');}
 async function quickRoleChange(userId,newRole){try{await window._mpdb.from('profiles').update({role:newRole}).eq('id',userId);showToast('Role updated ✓');}catch(e){showToast('Failed');}}
