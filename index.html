@@ -287,276 +287,40 @@ body.dark-mode .btn-secondary{color:#e8e6de;border-color:#555}
   </div>
 
   <!-- DASHBOARD -->
-  <div class="panel active" id="panel-dashboard">
-    <div id="alert-section"></div>
-    <div style="display:flex;gap:6px;margin-bottom:12px;align-items:center;flex-wrap:wrap">
-      <span style="font-size:12px;color:rgba(255,255,255,0.7);font-weight:500">Viewing:</span>
-      <button class="btn btn-sm" id="grp-all" onclick="setGroupFilter('all')" style="background:#fff;color:#1a1a18;font-weight:700;border:1px solid #fff">All</button>
-      <button class="btn btn-sm" id="grp-outside" onclick="setGroupFilter('outside')" style="background:rgba(255,255,255,0.15);color:#fff;font-weight:500;border:1px solid rgba(255,255,255,0.6)">Outside</button>
-      <button class="btn btn-sm" id="grp-production" onclick="setGroupFilter('production')" style="background:rgba(255,255,255,0.15);color:#fff;font-weight:500;border:1px solid rgba(255,255,255,0.6)">Production</button>
-    </div>
-    <div class="metrics">
-      <div class="metric-card"><div class="metric-label">Equipment</div><div class="metric-value" id="m-total">—</div><div class="metric-sub" id="m-total-sub"></div></div>
-      <div class="metric-card"><div class="metric-label">Overdue</div><div class="metric-value" id="m-overdue">—</div><div class="metric-sub">Work orders</div></div>
-      <div class="metric-card"><div class="metric-label">This Month</div><div class="metric-value" id="m-cost">—</div><div class="metric-sub" id="m-cost-sub"></div></div>
-      <div class="metric-card"><div class="metric-label">Parts Low</div><div class="metric-value" id="m-parts">—</div><div class="metric-sub">Below reorder</div></div>
-      <div class="metric-card"><div class="metric-label">Avg Health</div><div class="metric-value" id="m-health">—</div><div class="metric-sub">Fleet score</div></div>
-      <div class="metric-card"><div class="metric-label">Open WOs</div><div class="metric-value" id="m-open">—</div><div class="metric-sub">Work orders</div></div>
-    </div>
-    <div class="grid-2" style="margin-bottom:12px">
-      <div class="card"><div class="card-header"><span class="card-title">Equipment Status</span><button class="btn btn-secondary btn-sm" onclick="showPanel('equipment')">View all</button></div><div id="equip-list-dash"></div></div>
-      <div class="card"><div class="card-header"><span class="card-title">Upcoming Maintenance</span><button class="btn btn-secondary btn-sm" onclick="showPanel('calendar')">Calendar</button></div><div id="sched-list-dash"></div></div>
-    </div>
-    <div class="grid-2">
-      <div class="card"><div class="card-header"><span class="card-title">Recent Work Orders</span><span class="badge bg" id="task-count-badge"></span></div><div id="recent-tasks"></div></div>
-      <div class="card"><div class="card-header"><span class="card-title">Monthly Costs ($)</span></div><div style="display:flex;align-items:flex-end;gap:6px;height:90px" id="cost-chart"></div></div>
-    </div>
-  </div>
+  
 
   <!-- CALENDAR -->
-  <div class="panel" id="panel-calendar">
-    <div class="section-header"><span class="section-title">Maintenance Calendar</span>
-      <div style="display:flex;gap:6px"><button class="btn btn-secondary btn-sm" onclick="openModal('recur-modal')">+ Recurrence Rule</button><button class="btn btn-primary btn-sm" onclick="openModal('sched-modal')">+ Schedule Work</button></div>
-    </div>
-    <div class="card">
-      <div class="cal-nav">
-        <button class="btn btn-secondary btn-sm" onclick="calPrev()">‹</button>
-        <div class="cal-nav-title" id="cal-title"></div>
-        <button class="btn btn-secondary btn-sm" onclick="calNext()">›</button>
-        <button class="btn btn-secondary btn-sm" onclick="calToday()">Today</button>
-      </div>
-      <div class="cal-grid" id="cal-headers"></div>
-      <div class="cal-grid" id="cal-days" style="margin-top:4px"></div>
-    </div>
-    <div class="grid-2">
-      <div class="card"><div class="card-header"><span class="card-title">Recurrence Rules</span></div><div id="recur-list"></div></div>
-      <div class="card"><div class="card-header"><span class="card-title">This Month</span></div><div id="sched-month-list"></div></div>
-    </div>
-  </div>
+  
 
   <!-- EQUIPMENT -->
-  <div class="panel" id="panel-equipment">
-    <div style="display:flex;gap:6px;margin-bottom:10px;align-items:center;flex-wrap:wrap">
-      <span style="font-size:12px;color:rgba(255,255,255,0.7);font-weight:500">Filter:</span>
-      <button class="btn btn-sm" id="eq-grp-all" onclick="setEquipGroupFilter('all')" style="background:#fff;color:#1a1a18;font-weight:700;border:1px solid #fff">All</button>
-      <button class="btn btn-sm" id="eq-grp-outside" onclick="setEquipGroupFilter('outside')" style="background:rgba(255,255,255,0.15);color:#fff;font-weight:500;border:1px solid rgba(255,255,255,0.6)">Outside</button>
-      <button class="btn btn-sm" id="eq-grp-production" onclick="setEquipGroupFilter('production')" style="background:rgba(255,255,255,0.15);color:#fff;font-weight:500;border:1px solid rgba(255,255,255,0.6)">Production</button>
-    </div>
-    <div class="section-header"><span class="section-title">Equipment Registry</span>
-      <div style="display:flex;gap:6px"><button class="btn btn-secondary btn-sm" onclick="exportEquipCSV()">Export CSV</button><button class="btn btn-primary" onclick="openModal('equip-modal')">+ Add Equipment</button></div>
-    </div>
-    <div class="table-wrap"><table>
-      <thead><tr><th>Equipment</th><th>Status</th><th>Hours</th><th>Health</th><th>Assigned To</th><th>Last Service</th><th>Next Due</th><th></th></tr></thead>
-      <tbody id="equip-table-body"></tbody>
-    </table></div>
-  </div>
+  
 
   <!-- WORK ORDERS -->
-  <div class="panel" id="panel-tasks">
-    <div class="section-header">
-      <span class="section-title">Work Orders</span>
-      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
-        <select class="form-select" id="task-filter" onchange="renderTasks()" style="font-size:12px;padding:5px 8px">
-          <option value="all">All</option><option value="overdue">Overdue</option><option value="open">Open</option><option value="completed">Completed</option>
-        </select>
-        <select class="form-select" id="task-equip-filter" onchange="renderTasks()" style="font-size:12px;padding:5px 8px">
-          <option value="all">All Equipment</option>
-        </select>
-        <button class="btn btn-secondary" onclick="toggleBulkWO()">+ Bulk WO</button>
-        <button class="btn btn-primary" onclick="openModal('task-modal')">+ New Work Order</button>
-      </div>
-    </div>
-    <div class="card" id="bulk-wo-card" style="display:none">
-      <div class="card-header"><span class="card-title">Bulk Work Order</span><button class="btn btn-secondary btn-sm" onclick="document.getElementById('bulk-wo-card').style.display='none'">✕</button></div>
-      <div class="form-grid">
-        <div class="form-group full"><label class="form-label">Work Order Name *</label><input class="form-input" id="bulk-name" placeholder="e.g. Monthly Inspection"/></div>
-        <div class="form-group"><label class="form-label">Priority</label><select class="form-select" id="bulk-priority"><option>Low</option><option>Medium</option><option selected>High</option><option>Critical</option></select></div>
-        <div class="form-group"><label class="form-label">Due Date</label><input class="form-input" id="bulk-due" type="date"/></div>
-        <div class="form-group full"><label class="form-label">Notes</label><textarea class="form-textarea" id="bulk-notes" style="min-height:48px"></textarea></div>
-        <div class="form-group full"><label class="form-label">Select Equipment</label>
-          <div id="bulk-equip-list" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:6px;margin-top:4px"></div>
-        </div>
-      </div>
-      <div class="form-row"><button class="btn btn-primary" onclick="createBulkWO()">Create Work Orders</button></div>
-    </div>
-    <div class="table-wrap"><table>
-      <thead><tr><th>Work Order</th><th>Equipment</th><th>Priority</th><th>Assigned</th><th>Due Date</th><th>Cost</th><th>Parts Used</th><th>Status</th><th></th></tr></thead>
-      <tbody id="tasks-table-body"></tbody>
-    </table></div>
-  </div>
+  
 
   <!-- SCHEDULE -->
-  <div class="panel" id="panel-schedule">
-    <div class="section-header"><span class="section-title">Maintenance Schedule</span><button class="btn btn-primary" onclick="openModal('sched-modal')">+ Schedule Work</button></div>
-    <div class="grid-2">
-      <div class="card"><div class="card-header"><span class="card-title">This Week</span></div><div id="sched-week"></div></div>
-      <div class="card"><div class="card-header"><span class="card-title">Next 30 Days</span></div><div id="sched-next30"></div></div>
-    </div>
-  </div>
+  
 
   <!-- PARTS -->
-  <div class="panel" id="panel-parts">
-    <div class="section-header"><span class="section-title">Parts & Inventory</span><button class="btn btn-primary" onclick="openModal('part-modal')">+ Add Part</button></div>
-    <div id="reorder-alerts"></div>
-    <div class="table-wrap"><table>
-      <thead><tr><th>Part Name</th><th>Part #</th><th>Supplier</th><th>In Stock</th><th>Reorder At</th><th>Unit Cost</th><th>Total Value</th><th>Auto-Reorder</th><th>Status</th><th></th></tr></thead>
-      <tbody id="parts-table-body"></tbody>
-    </table></div>
-  </div>
+  
 
   <!-- SUPPLIERS -->
-  <div class="panel" id="panel-suppliers">
-    <div class="section-header"><span class="section-title">Supplier Management</span><button class="btn btn-primary" onclick="openModal('supplier-modal')">+ Add Supplier</button></div>
-    <div class="table-wrap"><table>
-      <thead><tr><th>Supplier Name</th><th>Contact</th><th>Email</th><th>Phone</th><th>Website</th><th>Parts</th><th></th></tr></thead>
-      <tbody id="supplier-table-body"></tbody>
-    </table></div>
-  </div>
+  
 
   <!-- DOCUMENTS -->
-  <div class="panel" id="panel-documents">
-    <div class="section-header"><span class="section-title">Documents & Warranties</span><button class="btn btn-primary" onclick="openModal('doc-modal')">+ Add Document</button></div>
-    <div id="doc-expiry-alerts"></div>
-    <div class="grid-2">
-      <div class="card"><div class="card-header"><span class="card-title">Warranties</span></div><div id="warranty-list"></div></div>
-      <div class="card"><div class="card-header"><span class="card-title">All Documents</span></div><div id="doc-list"></div></div>
-    </div>
-  </div>
+  
 
   <!-- ANALYTICS -->
-  <div class="panel" id="panel-analytics">
-    <div class="section-header"><span class="section-title">Analytics</span><div style="display:flex;gap:6px"><button class="btn btn-secondary btn-sm" onclick="exportHealthCSV()">Export Health CSV</button><button class="btn btn-secondary btn-sm" onclick="exportCSV()">Export All CSV</button></div></div>
-    <div class="metrics">
-      <div class="metric-card"><div class="metric-label">Total YTD Cost</div><div class="metric-value" id="r-ytd">$0</div></div>
-      <div class="metric-card"><div class="metric-label">Avg Cost / WO</div><div class="metric-value" id="r-avg">$0</div></div>
-      <div class="metric-card"><div class="metric-label">WOs Completed</div><div class="metric-value v-success" id="r-done">0</div></div>
-      <div class="metric-card"><div class="metric-label">Inventory Value</div><div class="metric-value" id="r-inv">$0</div></div>
-      <div class="metric-card"><div class="metric-label">Parts Consumed</div><div class="metric-value" id="r-parts-used">0</div></div>
-      <div class="metric-card"><div class="metric-label">Avg Health Score</div><div class="metric-value" id="r-health">—</div></div>
-    </div>
-    <div class="grid-2">
-      <div class="card"><div class="card-header"><span class="card-title">Cost by Equipment</span></div><div id="cost-by-equip"></div></div>
-      <div class="card"><div class="card-header"><span class="card-title">Work Order Breakdown</span></div><div id="task-breakdown"></div></div>
-    </div>
-    <div class="grid-2" style="margin-top:12px">
-      <div class="card"><div class="card-header"><span class="card-title">Equipment Health Scores</span></div><div id="health-scores"></div></div>
-      <div class="card"><div class="card-header"><span class="card-title">Top Parts Consumed</span></div><div id="parts-consumed"></div></div>
-    </div>
-  </div>
+  
 
   <!-- CHECKLIST TEMPLATES -->
-  <div class="panel" id="panel-checklists">
-    <div class="section-header">
-      <span class="section-title">Inspection Checklist Templates</span>
-      <button class="btn btn-primary" onclick="openModal('tpl-modal')">+ Add Template</button>
-    </div>
-    <div style="color:rgba(255,255,255,0.7);font-size:13px;margin-bottom:12px">Templates auto-fill the checklist when you pick a machine on a work order.</div>
-    <div id="tpl-list"></div>
-  </div>
+  
 
   <!-- CHAT -->
-  <div class="panel" id="panel-chat">
-    <div class="section-header"><span class="section-title">Team Chat</span></div>
-    <div style="display:flex;gap:8px;height:calc(100vh - 180px);min-height:500px">
-      <div style="width:180px;flex-shrink:0;display:flex;flex-direction:column;gap:6px">
-        <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:.5px;padding:4px 0">Channels</div>
-        <button class="chat-channel-btn active" id="ch-general" onclick="switchChannel('general',this)"><span style="font-size:14px">#</span> General</button>
-        <button class="chat-channel-btn" id="ch-outside" onclick="switchChannel('outside',this)"><span style="font-size:14px">#</span> Outside</button>
-        <button class="chat-channel-btn" id="ch-production" onclick="switchChannel('production',this)"><span style="font-size:14px">#</span> Production</button>
-        <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,0.6);text-transform:uppercase;letter-spacing:.5px;padding:8px 0 4px">Online</div>
-        <div id="online-users-list" style="font-size:12px;color:rgba(255,255,255,0.7)"></div>
-      </div>
-      <div style="flex:1;display:flex;flex-direction:column;background:rgba(255,255,255,0.92);border-radius:var(--radius-lg);border:1px solid var(--border);overflow:hidden">
-        <div style="padding:12px 16px;border-bottom:1px solid var(--border);background:rgba(245,245,243,0.95);display:flex;align-items:center;justify-content:space-between">
-          <div><span style="font-weight:600;font-size:14px" id="chat-channel-title"># general</span>
-          <span style="font-size:12px;color:var(--text2);margin-left:8px" id="chat-channel-desc">General team chat</span></div>
-        </div>
-        <div id="chat-offline-banner" style="display:none;background:var(--warning-bg);color:var(--warning-text);border-bottom:1px solid var(--warning);padding:8px 16px;font-size:13px;text-align:center">
-          📵 You're offline — chat is unavailable. Messages will load when you reconnect.
-        </div>
-        <div id="chat-messages" style="flex:1;overflow-y:auto;padding:12px 16px;display:flex;flex-direction:column;gap:2px"></div>
-        <div id="chat-tag-bar" style="display:none;padding:6px 12px;background:var(--accent-bg);border-top:1px solid var(--border);font-size:12px;align-items:center;gap:8px;flex-wrap:wrap">
-          <span style="color:var(--accent-text);font-weight:500">Tagged:</span>
-          <span id="chat-tag-equip" style="display:none"><span class="badge bi" id="chat-tag-equip-name"></span> <button onclick="clearTag('equip')" style="background:none;border:none;cursor:pointer;color:var(--accent-text)">✕</button></span>
-          <span id="chat-tag-task" style="display:none"><span class="badge bg" id="chat-tag-task-name"></span> <button onclick="clearTag('task')" style="background:none;border:none;cursor:pointer;color:var(--text2)">✕</button></span>
-        </div>
-        <div style="padding:10px 12px;border-top:1px solid var(--border);background:var(--bg)">
-          <div id="mention-dropdown" style="display:none;background:var(--bg);border:1px solid var(--border);border-radius:var(--radius);padding:4px;margin-bottom:6px;max-height:120px;overflow-y:auto"></div>
-          <div style="display:flex;gap:8px;align-items:flex-end">
-            <div style="flex:1">
-              <textarea class="form-textarea" id="chat-input" placeholder="Message #general... Use @name to mention" style="min-height:40px;max-height:120px;resize:none;margin:0" oninput="handleChatInput(this)" onkeydown="chatKeyDown(event)"></textarea>
-            </div>
-            <div style="display:flex;flex-direction:column;gap:4px">
-              <button class="btn btn-secondary btn-sm" onclick="document.getElementById('chat-photo-input').click()" style="padding:6px 8px">📎</button>
-              <button class="btn btn-primary btn-sm" onclick="sendChatMessage()">Send</button>
-            </div>
-          </div>
-          <div style="display:flex;gap:6px;margin-top:6px;flex-wrap:wrap;align-items:center">
-            <span style="font-size:11px;color:var(--text3)">Tag:</span>
-            <select class="form-select" id="tag-equip-select" style="font-size:11px;padding:2px 6px" onchange="tagEquip(this.value)"><option value="">+ Equipment</option></select>
-            <select class="form-select" id="tag-task-select" style="font-size:11px;padding:2px 6px" onchange="tagTask(this.value)"><option value="">+ Work Order</option></select>
-            <input type="file" id="chat-photo-input" accept="image/*" style="display:none" onchange="handleChatPhoto(this)"/>
-            <span id="chat-photo-preview" style="font-size:11px;color:var(--accent)"></span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
+  
 
   <!-- ADMIN -->
-  <div class="panel" id="panel-admin">
-    <div class="section-header"><span class="section-title">User Management & Permissions</span></div>
-    <div class="tab-bar" style="background:rgba(255,255,255,0.1);border-radius:var(--radius);padding:4px;border:none;gap:4px">
-      <button class="tab active" onclick="switchAdminTab('approvals',this)" style="color:#fff;background:rgba(255,255,255,0.25);font-weight:600;border:none">Pending Approvals</button>
-      <button class="tab" onclick="switchAdminTab('users',this)" style="color:rgba(255,255,255,0.8);border:none">Active Users</button>
-      <button class="tab" onclick="switchAdminTab('permissions',this)" style="color:rgba(255,255,255,0.8);border:none">Permissions</button>
-    </div>
-    <div id="admin-approvals">
-      <div class="grid-2">
-        <div class="card"><div class="card-header"><span class="card-title">Pending Approvals</span><span class="badge bd" id="pending-count">0</span></div><div id="pending-list"></div></div>
-        <div class="card"><div class="card-header"><span class="card-title">Denied</span></div><div id="denied-list"></div></div>
-      </div>
-    </div>
-    <div id="admin-users" style="display:none">
-      <div class="card" style="padding:0"><table class="data-table">
-        <thead><tr><th>Name</th><th>Username</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead>
-        <tbody id="users-table-body"></tbody>
-      </table></div>
-    </div>
-    <div id="admin-permissions" style="display:none">
-      <div class="card">
-        <div class="card-header"><span class="card-title">Role Permissions Matrix</span></div>
-        <div style="overflow-x:auto">
-          <table class="data-table" id="permissions-matrix">
-            <thead><tr><th>Permission</th><th style="text-align:center">Admin</th><th style="text-align:center">Manager</th><th style="text-align:center">Technician</th><th style="text-align:center">Viewer</th></tr></thead>
-            <tbody id="permissions-table-body"></tbody>
-          </table>
-        </div>
-        <div style="margin-top:12px;font-size:12px;color:var(--text2)">✅ = Allowed &nbsp;·&nbsp; ❌ = Not allowed &nbsp;·&nbsp; Admin permissions are fixed.</div>
-      </div>
-      <div class="card" style="margin-top:12px">
-        <div class="card-header"><span class="card-title">Change User Role & Group</span></div>
-        <div style="display:flex;gap:10px;align-items:flex-end;flex-wrap:wrap">
-          <div class="form-group"><label class="form-label">User</label><select class="form-select" id="role-user-select" style="min-width:160px"></select></div>
-          <div class="form-group"><label class="form-label">New Role</label>
-            <select class="form-select" id="role-select">
-              <option value="manager">Manager</option>
-              <option value="tech" selected>Technician</option>
-              <option value="viewer">Viewer</option>
-            </select>
-          </div>
-          <div class="form-group"><label class="form-label">Group</label>
-            <select class="form-select" id="group-select">
-              <option value="">— None —</option>
-              <option value="outside">Outside</option>
-              <option value="production">Production</option>
-            </select>
-          </div>
-          <button class="btn btn-primary" onclick="changeUserRole()">Update</button>
-        </div>
-      </div>
-    </div>
-  </div>
+  
 
 <!-- Bug / Suggestion Modal -->
 <div class="modal-backdrop" id="bug-modal">
@@ -621,224 +385,28 @@ body.dark-mode .btn-secondary{color:#e8e6de;border-color:#555}
 
 <!-- ===== MODALS ===== -->
 <!-- Work Order Modal -->
-<div class="modal-backdrop" id="task-modal">
-  <div class="modal" style="max-width:640px">
-    <div class="modal-header"><span class="modal-title" id="task-modal-title">New Work Order</span><button class="modal-close" onclick="closeModal('task-modal')">✕</button></div>
-    <div class="tab-bar">
-      <button class="tab active" onclick="switchWOTab('details',this)">Details</button>
-      <button class="tab" onclick="switchWOTab('checklist',this)">Checklist</button>
-      <button class="tab" onclick="switchWOTab('parts-tab',this)">Parts Used</button>
-      <button class="tab" onclick="switchWOTab('comments',this)">Comments</button>
-      <button class="tab" onclick="switchWOTab('attachments',this)">Attachments</button>
-    </div>
-    <div id="wo-details">
-      <div class="form-grid">
-        <div class="form-group full"><label class="form-label">Work Order Name *</label><input class="form-input" id="t-name" placeholder="e.g. Oil filter replacement"/></div>
-        <div class="form-group"><label class="form-label">Equipment *</label><select class="form-select" id="t-equip"></select></div>
-        <div class="form-group"><label class="form-label">Assigned To</label><select class="form-select" id="t-assign"></select></div>
-        <div class="form-group"><label class="form-label">Priority</label><select class="form-select" id="t-priority"><option>Low</option><option>Medium</option><option selected>High</option><option>Critical</option></select></div>
-        <div class="form-group"><label class="form-label">Due Date</label><input class="form-input" id="t-due" type="date"/></div>
-        <div class="form-group"><label class="form-label">Estimated Cost ($)</label><input class="form-input" id="t-cost" type="number" min="0" placeholder="0"/></div>
-        <div class="form-group"><label class="form-label">Meter Reading</label><input class="form-input" id="t-meter" placeholder="e.g. 4320 hrs"/></div>
-        <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="t-status"><option>Open</option><option>Overdue</option><option>Completed</option></select></div>
-        <div class="form-group"><label class="form-label">Overdue Email Reminder</label>
-          <select class="form-select" id="t-email-freq">
-            <option value="0">No reminders</option>
-            <option value="7" selected>Weekly (every 7 days)</option>
-            <option value="3">Every 3 days</option>
-            <option value="1">Daily</option>
-            <option value="14">Every 2 weeks</option>
-          </select>
-        </div>
-        <div class="form-group full"><label class="form-label">Notes</label><textarea class="form-textarea" id="t-notes" placeholder="Additional notes..."></textarea></div>
-      </div>
-    </div>
-    <div id="wo-checklist" style="display:none">
-      <div class="form-group"><label class="form-label">Checklist Items (one per line)</label><textarea class="form-textarea" id="t-checklist" placeholder="Check oil level&#10;Replace filter&#10;Inspect belts" style="min-height:120px"></textarea></div>
-    </div>
-    <div id="wo-parts-tab" style="display:none">
-      <div style="display:flex;gap:8px;margin-bottom:12px;align-items:flex-end;flex-wrap:wrap">
-        <div class="form-group" style="flex:1"><label class="form-label">Part</label><select class="form-select" id="wo-part-select"></select></div>
-        <div class="form-group" style="width:80px"><label class="form-label">Qty</label><input class="form-input" id="wo-part-qty" type="number" min="1" value="1"/></div>
-        <button class="btn btn-primary btn-sm" onclick="addPartToWO()">Add</button>
-      </div>
-      <div id="wo-parts-list"><div style="color:var(--text3);font-size:13px">No parts added yet</div></div>
-    </div>
-    <div id="wo-comments" style="display:none">
-      <div id="wo-comment-list" style="margin-bottom:12px"><div style="color:var(--text3);font-size:13px">No comments yet</div></div>
-      <div class="form-group"><label class="form-label">Add Comment</label><textarea class="form-textarea" id="wo-comment-input" placeholder="Add a note or update..."></textarea></div>
-      <button class="btn btn-secondary btn-sm" style="margin-top:8px" onclick="addWOComment()">Post Comment</button>
-    </div>
-    <div id="wo-attachments" style="display:none">
-      <label class="form-label">Photos / Attachments</label>
-      <div class="photo-grid" id="task-photo-grid">
-        <div class="photo-add" onclick="document.getElementById('task-photo-input').click()">+</div>
-        <input type="file" id="task-photo-input" accept="image/*" multiple style="display:none" onchange="handlePhotoUpload(this,'task')"/>
-      </div>
-    </div>
-    <div class="form-row"><button class="btn btn-secondary" onclick="closeModal('task-modal')">Cancel</button><button class="btn btn-primary" onclick="saveTask()">Save Work Order</button></div>
-  </div>
-</div>
+
 
 <!-- Equipment Modal -->
-<div class="modal-backdrop" id="equip-modal">
-  <div class="modal" style="max-width:600px">
-    <div class="modal-header"><span class="modal-title">Add Equipment</span><button class="modal-close" onclick="closeModal('equip-modal')">✕</button></div>
-    <div class="tab-bar">
-      <button class="tab active" onclick="switchTab('equip-tab','details-eq',this)">Details</button>
-      <button class="tab" onclick="switchTab('equip-tab','custom-eq',this)">Custom Fields</button>
-      <button class="tab" onclick="switchTab('equip-tab','assign-eq',this)">Assign Users</button>
-    </div>
-    <div id="details-eq">
-      <div class="form-grid">
-        <div class="form-group full"><label class="form-label">Equipment Name *</label><input class="form-input" id="e-name" placeholder="e.g. Caterpillar Excavator 320"/></div>
-        <div class="form-group"><label class="form-label">Type</label><input class="form-input" id="e-type" placeholder="e.g. Excavator"/></div>
-        <div class="form-group"><label class="form-label">Serial / Asset #</label><input class="form-input" id="e-serial" placeholder="SN-00123"/></div>
-        <div class="form-group"><label class="form-label">Current Hours</label><input class="form-input" id="e-hours" type="number" min="0" placeholder="0"/></div>
-        <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="e-status"><option>Operational</option><option>In Service</option><option>Down</option><option>Standby</option></select></div>
-              <div class="form-group"><label class="form-label">Group</label>
-        <select class="form-select" id="e-group"><option value="outside">Outside</option><option value="production">Production</option><option value="both">Both</option></select>
-      </div>
-      <div class="form-group"><label class="form-label">Primary Operator</label><input class="form-input" id="e-op" placeholder="Name"/></div>
-        <div class="form-group"><label class="form-label">Monthly Budget ($)</label><input class="form-input" id="e-budget-monthly" type="number" min="0" placeholder="0"/></div>
-      <div class="form-group"><label class="form-label">Yearly Budget ($)</label><input class="form-input" id="e-budget-yearly" type="number" min="0" placeholder="0"/></div>
-      <div class="form-group full"><label class="form-label">Notes</label><textarea class="form-textarea" id="e-notes"></textarea></div>
-        <div class="form-group full">
-          <label class="form-label">Equipment Photo</label>
-          <div class="photo-grid" id="equip-photo-grid">
-            <div class="photo-add" onclick="document.getElementById('equip-photo-input').click()">+</div>
-            <input type="file" id="equip-photo-input" accept="image/*" style="display:none" onchange="handlePhotoUpload(this,'equip')"/>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div id="custom-eq" style="display:none">
-      <div style="margin-bottom:10px;font-size:13px;color:var(--text2)">Add custom fields for this equipment type (e.g. Tire Size, Engine Model)</div>
-      <div id="custom-fields-list"></div>
-      <button class="btn btn-secondary btn-sm" style="margin-top:8px" onclick="addCustomField()">+ Add Field</button>
-    </div>
-    <div id="assign-eq" style="display:none">
-      <div style="margin-bottom:10px;font-size:13px;color:var(--text2)">Select users who can be assigned work orders for this equipment</div>
-      <div id="assign-users-list"></div>
-    </div>
-    <div class="form-row"><button class="btn btn-secondary" onclick="closeModal('equip-modal')">Cancel</button><button class="btn btn-primary" onclick="saveEquipment()">Add Equipment</button></div>
-  </div>
-</div>
+
 
 <!-- Schedule Modal -->
-<div class="modal-backdrop" id="sched-modal">
-  <div class="modal">
-    <div class="modal-header"><span class="modal-title">Schedule Maintenance</span><button class="modal-close" onclick="closeModal('sched-modal')">✕</button></div>
-    <div class="form-grid">
-      <div class="form-group full"><label class="form-label">Job Name *</label><input class="form-input" id="s-name" placeholder="e.g. 500-hour service"/></div>
-      <div class="form-group"><label class="form-label">Equipment</label><select class="form-select" id="s-equip"></select></div>
-      <div class="form-group"><label class="form-label">Scheduled Date</label><input class="form-input" id="s-date" type="date"/></div>
-      <div class="form-group"><label class="form-label">Technician</label><select class="form-select" id="s-tech"></select></div>
-      <div class="form-group"><label class="form-label">Est. Duration (hrs)</label><input class="form-input" id="s-dur" type="number" placeholder="2"/></div>
-      <div class="form-group full"><label class="form-label">Notes</label><textarea class="form-textarea" id="s-notes"></textarea></div>
-    </div>
-    <div class="form-row"><button class="btn btn-secondary" onclick="closeModal('sched-modal')">Cancel</button><button class="btn btn-primary" onclick="saveSched()">Schedule</button></div>
-  </div>
-</div>
+
 
 <!-- Recurrence Rule Modal -->
-<div class="modal-backdrop" id="recur-modal">
-  <div class="modal">
-    <div class="modal-header"><span class="modal-title">Add Recurrence Rule</span><button class="modal-close" onclick="closeModal('recur-modal')">✕</button></div>
-    <div class="form-grid">
-      <div class="form-group full"><label class="form-label">Rule Name *</label><input class="form-input" id="r-name" placeholder="e.g. Monthly oil change"/></div>
-      <div class="form-group"><label class="form-label">Equipment</label><select class="form-select" id="r-equip"></select></div>
-      <div class="form-group"><label class="form-label">Trigger Type</label>
-        <select class="form-select" id="r-type" onchange="toggleRecurType()">
-          <option value="calendar">Calendar (time-based)</option>
-          <option value="hours">Runtime Hours</option>
-        </select>
-      </div>
-      <div class="form-group" id="r-interval-group"><label class="form-label">Every</label>
-        <div style="display:flex;gap:6px">
-          <input class="form-input" id="r-interval-val" type="number" min="1" value="1" style="width:70px"/>
-          <select class="form-select" id="r-interval-unit"><option value="day">Day(s)</option><option value="week">Week(s)</option><option value="month" selected>Month(s)</option><option value="year">Year(s)</option></select>
-        </div>
-      </div>
-      <div class="form-group" id="r-hours-group" style="display:none"><label class="form-label">Every X Runtime Hours</label>
-        <input class="form-input" id="r-hours" type="number" min="1" placeholder="e.g. 500"/>
-      </div>
-      <div class="form-group"><label class="form-label">Priority</label><select class="form-select" id="r-priority"><option>Low</option><option>Medium</option><option selected>High</option><option>Critical</option></select></div>
-      <div class="form-group"><label class="form-label">Assign To</label><select class="form-select" id="r-assign"></select></div>
-      <div class="form-group full"><label class="form-label">Work Order Template Notes</label><textarea class="form-textarea" id="r-notes" placeholder="Notes to include on auto-generated work orders..."></textarea></div>
-    </div>
-    <div class="form-row"><button class="btn btn-secondary" onclick="closeModal('recur-modal')">Cancel</button><button class="btn btn-primary" onclick="saveRecurRule()">Save Rule</button></div>
-  </div>
-</div>
+
 
 <!-- Part Modal -->
-<div class="modal-backdrop" id="part-modal">
-  <div class="modal">
-    <div class="modal-header"><span class="modal-title">Add Part</span><button class="modal-close" onclick="closeModal('part-modal')">✕</button></div>
-    <div class="form-grid">
-      <div class="form-group full"><label class="form-label">Part Name *</label><input class="form-input" id="p-name" placeholder="e.g. Hydraulic Filter HF200"/></div>
-      <div class="form-group"><label class="form-label">Part Number</label><input class="form-input" id="p-num" placeholder="HF-200-A"/></div>
-      <div class="form-group"><label class="form-label">Supplier</label><select class="form-select" id="p-supplier-select"></select></div>
-      <div class="form-group"><label class="form-label">Qty In Stock</label><input class="form-input" id="p-qty" type="number" min="0" placeholder="0"/></div>
-      <div class="form-group"><label class="form-label">Reorder At (qty)</label><input class="form-input" id="p-reorder" type="number" min="0" placeholder="2"/></div>
-      <div class="form-group"><label class="form-label">Unit Cost ($)</label><input class="form-input" id="p-cost" type="number" min="0" placeholder="0"/></div>
-      <div class="form-group"><label class="form-label">Auto-Reorder Qty</label><input class="form-input" id="p-reorder-qty" type="number" min="0" placeholder="10"/></div>
-      <div class="form-group" style="justify-content:flex-end;padding-top:20px">
-        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px">
-          <input type="checkbox" id="p-auto-reorder"/> Enable Auto-Reorder Alert
-        </label>
-      </div>
-    </div>
-    <div class="form-row"><button class="btn btn-secondary" onclick="closeModal('part-modal')">Cancel</button><button class="btn btn-primary" onclick="savePart()">Add Part</button></div>
-  </div>
-</div>
+
 
 <!-- Supplier Modal -->
-<div class="modal-backdrop" id="supplier-modal">
-  <div class="modal">
-    <div class="modal-header"><span class="modal-title">Add Supplier</span><button class="modal-close" onclick="closeModal('supplier-modal')">✕</button></div>
-    <div class="form-grid">
-      <div class="form-group full"><label class="form-label">Supplier Name *</label><input class="form-input" id="sup-name" placeholder="e.g. CAT Parts Inc."/></div>
-      <div class="form-group"><label class="form-label">Contact Person</label><input class="form-input" id="sup-contact" placeholder="Name"/></div>
-      <div class="form-group"><label class="form-label">Email</label><input class="form-input" id="sup-email" type="email" placeholder="email@supplier.com"/></div>
-      <div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="sup-phone" placeholder="(555) 000-0000"/></div>
-      <div class="form-group"><label class="form-label">Website</label><input class="form-input" id="sup-website" placeholder="https://..."/></div>
-      <div class="form-group full"><label class="form-label">Notes</label><textarea class="form-textarea" id="sup-notes"></textarea></div>
-    </div>
-    <div class="form-row"><button class="btn btn-secondary" onclick="closeModal('supplier-modal')">Cancel</button><button class="btn btn-primary" onclick="saveSupplier()">Add Supplier</button></div>
-  </div>
-</div>
+
 
 <!-- Document Modal -->
-<div class="modal-backdrop" id="doc-modal">
-  <div class="modal">
-    <div class="modal-header"><span class="modal-title">Add Document / Warranty</span><button class="modal-close" onclick="closeModal('doc-modal')">✕</button></div>
-    <div class="form-grid">
-      <div class="form-group full"><label class="form-label">Document Name *</label><input class="form-input" id="d-name" placeholder="e.g. Crane Certification 2025"/></div>
-      <div class="form-group"><label class="form-label">Type</label><select class="form-select" id="d-type"><option value="warranty">Warranty</option><option value="certificate">Certificate</option><option value="manual">Manual</option><option value="inspection">Inspection Report</option><option value="document">Other Document</option></select></div>
-      <div class="form-group"><label class="form-label">Linked Equipment</label><select class="form-select" id="d-equip"><option value="">— None —</option></select></div>
-      <div class="form-group"><label class="form-label">Expiry Date</label><input class="form-input" id="d-expiry" type="date"/></div>
-      <div class="form-group full"><label class="form-label">Notes</label><textarea class="form-textarea" id="d-notes" placeholder="Additional details..."></textarea></div>
-      <div class="form-group full">
-        <label class="form-label">Attach File (PDF or Image)</label>
-        <div class="photo-grid" id="doc-file-grid">
-          <div class="photo-add" onclick="document.getElementById('doc-file-input').click()" style="font-size:14px">📎</div>
-          <input type="file" id="doc-file-input" accept=".pdf,image/*" style="display:none" onchange="handleDocUpload(this)"/>
-        </div>
-        <div id="doc-file-preview" style="margin-top:6px;font-size:12px;color:var(--text2)"></div>
-      </div>
-    </div>
-    <div class="form-row"><button class="btn btn-secondary" onclick="closeModal('doc-modal')">Cancel</button><button class="btn btn-primary" onclick="saveDoc()">Save Document</button></div>
-  </div>
-</div>
+
 
 <!-- Detail Modal -->
-<div class="modal-backdrop" id="detail-modal">
-  <div class="modal" style="max-width:640px">
-    <div class="modal-header"><span class="modal-title" id="detail-title">Detail</span><button class="modal-close" onclick="closeModal('detail-modal')">✕</button></div>
-    <div id="detail-body"></div>
-  </div>
-</div>
+
 
 <!-- Photo Viewer -->
 <div id="photo-viewer" onclick="closePhotoViewer()">
@@ -967,24 +535,6 @@ async function doRegister() {
 
 document.getElementById('auth-pass').addEventListener('keydown', e => { if(e.key==='Enter') doLogin(); });
 
-async function enterApp() {
-  try { localStorage.setItem('mp_session', JSON.stringify(currentUser)); } catch(e) {}
-  document.getElementById('auth-screen').style.display='none';
-  document.getElementById('app').style.display='block';
-  document.getElementById('user-chip-name').textContent=currentUser.name;
-  if (currentUser.role==='admin') {
-    const nav=document.getElementById('main-nav');
-    if (!document.getElementById('admin-nav-btn')) {
-      const btn=document.createElement('button');
-      btn.className='nav-btn'; btn.id='admin-nav-btn';
-      btn.textContent='Admin'; btn.onclick=()=>showPanel('admin');
-      nav.appendChild(btn);
-    }
-  }
-  await loadState();
-  await runRecurrenceEngine();
-  renderDashboard();
-}
 
 async function signOut() {
   localStorage.removeItem('mp_session');
@@ -1001,18 +551,6 @@ let state = { equipment:[], tasks:[], schedules:[], parts:[], suppliers:[], docu
 
 function uid() { return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 
-function computeMonthlyCosts() {
-  const now = new Date();
-  return [3,2,1,0].map(ago => {
-    const d = new Date(now.getFullYear(), now.getMonth()-ago, 1);
-    const y = d.getFullYear(), m = d.getMonth();
-    return state.tasks.filter(t => {
-      if(!t.due) return false;
-      const td = new Date(t.due);
-      return td.getFullYear()===y && td.getMonth()===m;
-    }).reduce((a,t) => a+(t.cost||0), 0);
-  });
-}
 
 async function loadState() {
   setSyncStatus('syncing');
@@ -1053,13 +591,6 @@ function computeMonthlyCosts() {
   });
 }
 
-async function persist(table, action, record) {
-  try {
-    if (action==='upsert') await window._mpdb.from(table).upsert(record);
-    if (action==='delete') await window._mpdb.from(table).delete().eq('id', record.id);
-    setSyncStatus('online'); showToast('Saved ✓');
-  } catch(e) { setSyncStatus('offline'); showToast('Sync failed — check connection'); }
-}
 
 function setSyncStatus(s) {
   const dot=document.getElementById('sync-dot'); if(!dot) return;
@@ -1211,13 +742,6 @@ function switchTab(group, tab, btn){
 // ============================================================
 let pendingPhotos={task:[],equip:[]};
 let pendingDocFile=null;
-function handlePhotoUpload(input,key){
-  Array.from(input.files).forEach(file=>{
-    const reader=new FileReader();
-    reader.onload=e=>{ pendingPhotos[key].push(e.target.result); refreshPhotoGrid(key); };
-    reader.readAsDataURL(file);
-  }); input.value='';
-}
 function refreshPhotoGrid(key){
   const gridId=key==='task'?'task-photo-grid':'equip-photo-grid';
   const grid=document.getElementById(gridId); if(!grid) return;
@@ -1238,9 +762,6 @@ function handleDocUpload(input){
 // ============================================================
 // DASHBOARD
 // ============================================================
-function renderDashboard(){
-  renderAlerts(); renderEquipListDash(); renderSchedDash(); renderRecentTasks(); renderCostChart(); updateMetrics();
-}
 function updateMetrics(){
   const overdue=state.tasks.filter(t=>t.status==='Overdue').length;
   const open=state.tasks.filter(t=>t.status==='Open').length;
@@ -1406,28 +927,6 @@ function toggleRecurType(){
 // ============================================================
 // EQUIPMENT
 // ============================================================
-function renderEquipmentTable(){
-  document.getElementById('equip-table-body').innerHTML=state.equipment.map(e=>{
-    const score=calcHealth(e.id);
-    const icon=e.photos&&e.photos.length?`<img data-src="${e.photos[0]}" src="" class="lazy-img" style="width:100%;height:100%;object-fit:cover"/>` : (ICONS[e.type]||'⚙');
-    return `<tr onclick="openEquipDetail('${e.id}')">
-      <td><div style="display:flex;align-items:center;gap:9px">
-        <div class="equip-icon" style="width:32px;height:32px">${icon}</div>
-        <div><div style="font-weight:500">${e.name}</div><div style="font-size:11px;color:var(--text2)">${e.serial}</div></div>
-      </div></td>
-      <td>${badge(e.status)}</td>
-      <td><b>${e.hours.toLocaleString()}</b> hrs</td>
-      <td>
-        <div class="health-bar"><div class="health-fill" style="width:${score}%;background:${healthColor(score)}"></div></div>
-        <span style="font-size:11px;color:${healthColor(score)};font-weight:600">${score}%</span>
-      </td>
-      <td style="color:var(--text2);font-size:12px">${(e.assigned_users||[]).join(', ')||e.op||'—'}</td>
-      <td style="font-size:12px;color:var(--text2)">${getLastService(e.id)}</td>
-      <td style="font-size:12px">${getNextDue(e.id)}</td>
-      <td onclick="event.stopPropagation()"><button class="btn btn-danger" onclick="deleteEquip('${e.id}')">Del</button></td>
-    </tr>`;
-  }).join('');
-}
 function getLastService(id){ const d=state.tasks.filter(t=>t.equipId===id&&t.status==='Completed'); return d.length?fmtDate(d.sort((a,b)=>new Date(b.due)-new Date(a.due))[0].due):'—'; }
 function getNextDue(id){ const o=state.tasks.filter(t=>t.equipId===id&&t.status!=='Completed'); if(!o.length)return'—'; const n=o.sort((a,b)=>new Date(a.due)-new Date(b.due))[0]; return `<span style="color:${isOverdue(n.due)?'var(--danger)':'inherit'}">${fmtDate(n.due)}</span>`; }
 async function deleteEquip(id){ if(!confirm('Delete this equipment?'))return; state.equipment=state.equipment.filter(e=>e.id!==id); await persist('equipment','delete',{id}); renderEquipmentTable(); updateMetrics(); }
@@ -1643,32 +1142,6 @@ function renderAnalytics(){
 // ============================================================
 // ADMIN
 // ============================================================
-async function renderAdminPanel(){
-  try {
-    const { data: profiles }=await window._mpdb.from('profiles').select('*').order('created_at',{ascending:false});
-    const pending=profiles.filter(p=>p.status==='pending');
-    const active=profiles.filter(p=>p.status==='approved');
-    const denied=profiles.filter(p=>p.status==='denied');
-    document.getElementById('pending-count').textContent=pending.length||'0';
-    document.getElementById('pending-list').innerHTML=pending.length?pending.map(p=>
-      `<div class="parts-row">
-        <div style="flex:1"><div style="font-weight:500">${p.full_name}</div><div style="font-size:11px;color:var(--text2)">${p.username} · Requested ${new Date(p.created_at).toLocaleDateString()}</div></div>
-        <button class="btn btn-success btn-sm" onclick="approveUser('${p.id}','${p.full_name}')">Approve</button>
-        <button class="btn btn-danger btn-sm" onclick="denyUser('${p.id}')">Deny</button>
-      </div>`
-    ).join(''):'<div style="color:var(--text2);font-size:13px;padding:8px 0">No pending requests</div>';
-    document.getElementById('active-list').innerHTML=[...active,...denied].map(p=>
-      `<div class="parts-row">
-        <div style="flex:1"><div style="font-weight:500">${p.full_name}</div><div style="font-size:11px;color:var(--text2)">${p.username}</div></div>
-        <span class="badge ${p.status==='approved'?'bs':'bd'}">${p.status==='approved'?'Active':'Denied'}</span>
-        <button class="btn btn-danger btn-sm" onclick="deleteUser('${p.id}','${p.full_name}')">Delete</button>
-      </div>`
-    ).join('')||'<div style="color:var(--text2);font-size:13px;padding:8px 0">No users yet</div>';
-  } catch(e){ console.error('Admin panel error',e); }
-}
-async function approveUser(id,name){ await window._mpdb.from('profiles').update({status:'approved'}).eq('id',id); showToast(name+' approved ✓'); renderAdminPanel(); }
-async function denyUser(id){ await window._mpdb.from('profiles').update({status:'denied'}).eq('id',id); showToast('Request denied'); renderAdminPanel(); }
-async function deleteUser(id,name){ if(!confirm('Delete '+name+'?'))return; await window._mpdb.from('profiles').delete().eq('id',id); showToast(name+' removed'); renderAdminPanel(); }
 
 // ============================================================
 // DETAIL VIEWS
@@ -1759,23 +1232,6 @@ async function toggleCheck(taskId,idx){
   const t=state.tasks.find(x=>x.id===taskId); if(!t)return;
   t.checklist[idx].done=!t.checklist[idx].done;
   await persist('tasks','upsert',t); openTaskDetail(taskId);
-}
-async function markComplete(taskId){
-  const t=state.tasks.find(x=>x.id===taskId); if(!t)return;
-  const equip=state.equipment.find(e=>e.id===t.equipId);
-  const currentHours=equip?equip.hours:0;
-  const newHours=prompt(`Update hour meter for ${equip?.name||'equipment'}?\n\nCurrent: ${currentHours.toLocaleString()} hrs\nEnter new reading (or cancel to skip):`);
-  if(newHours!==null&&newHours.trim()!==''){
-    const parsed=parseInt(newHours);
-    if(!isNaN(parsed)&&parsed>=currentHours){
-      if(equip){equip.hours=parsed;t.meter=parsed+' hrs';await persist('equipment','upsert',equip);}
-    }
-  }
-  t.status='Completed';
-  if(t.photos&&t.photos.length){t.photos=[];}
-  await persist('tasks','upsert',t);
-  await runRecurrenceEngine();
-  closeModal('detail-modal'); renderDashboard();
 }
 
 function openEquipDetail(id){
@@ -1956,29 +1412,6 @@ async function saveTask(){
   document.getElementById('wo-parts-list').innerHTML='<div style="color:var(--text3);font-size:13px">No parts added yet</div>';
 }
 
-async function saveEquipment(){
-  const name=document.getElementById('e-name').value.trim(); if(!name){ showToast('Please enter a name'); return; }
-  const assignInput=document.getElementById('assign-input');
-  const assignedUsers=assignInput?assignInput.value.split(',').map(s=>s.trim()).filter(Boolean):[];
-  const record={
-    id:uid(), name,
-    type:   document.getElementById('e-type').value,
-    serial: document.getElementById('e-serial').value,
-    hours:  parseInt(document.getElementById('e-hours').value)||0,
-    status: document.getElementById('e-status').value,
-    op:     document.getElementById('e-op').value,
-    notes:  document.getElementById('e-notes').value,
-    photos: pendingPhotos.equip.slice(),
-    assigned_users: assignedUsers,
-    custom_fields: customFieldsTemp,
-    health_score: 100,
-  };
-  state.equipment.push(record);
-  await persist('equipment','upsert',record);
-  pendingPhotos.equip=[]; customFieldsTemp={};
-  closeModal('equip-modal'); renderEquipmentTable(); updateMetrics();
-  ['e-name','e-type','e-serial','e-hours','e-op','e-notes'].forEach(id=>{ const el=document.getElementById(id); if(el) el.value=''; });
-}
 
 async function saveSched(){
   const name=document.getElementById('s-name').value.trim(); if(!name){ showToast('Please enter a name'); return; }
@@ -2219,7 +1652,6 @@ function compressImage(dataUrl, maxWidth=800, quality=0.75) {
 }
 
 // Override handlePhotoUpload to compress
-const _origHandlePhoto = handlePhotoUpload;
 async function handlePhotoUpload(input, key) {
   const files = Array.from(input.files);
   for(const file of files) {
@@ -2246,7 +1678,6 @@ function saveOfflineQueue() {
 }
 
 // Override persist to queue when offline
-const _origPersist = persist;
 async function persist(table, action, record) {
   if(!navigator.onLine) {
     offlineQueue.push({ table, action, record, ts: Date.now() });
@@ -2323,99 +1754,15 @@ Enter new reading (or cancel to skip):`);
 // ============================================================
 // SIGN OFF & COMPLETE
 // ============================================================
-async function markCompleteWithSignoff(taskId) {
-  const t = state.tasks.find(x=>x.id===taskId); if(!t) return;
-  const nameEl = document.getElementById('signoff-name-'+taskId);
-  const pinEl  = document.getElementById('signoff-pin-'+taskId);
-  const name = nameEl?.value.trim();
-  const pin  = pinEl?.value.trim();
-  if(!name) { showToast('Please enter your name to sign off'); return; }
-  if(!pin || pin.length < 4) { showToast('Please enter a 4-digit PIN'); return; }
-  // Update meter if provided
-  const equip = state.equipment.find(e=>e.id===t.equipId);
-  const currentHours = equip ? equip.hours : 0;
-  const newHours = prompt(`Update hour meter for ${equip?.name||'equipment'}?
-
-Current: ${currentHours.toLocaleString()} hrs
-Enter new reading (or cancel to skip):`);
-  if(newHours !== null && newHours.trim() !== '') {
-    const parsed = parseInt(newHours);
-    if(!isNaN(parsed) && parsed >= currentHours) {
-      if(equip) { equip.hours = parsed; t.meter = parsed + ' hrs'; await persist('equipment','upsert',equip); }
-    }
-  }
-  t.status = 'Completed';
-  t.signoff_name = name;
-  t.signoff_pin  = pin;
-  t.signoff_at   = new Date().toISOString();
-  if(t.photos && t.photos.length) { t.photos = []; }
-  await persist('tasks','upsert',t);
-  await runRecurrenceEngine();
-  // Check if this triggers overdue email scheduling
-  scheduleOverdueCheck(t);
-  closeModal('detail-modal');
-  showToast('Work order signed off by ' + name + ' ✓');
-  renderDashboard();
-}
+async 
 
 // ============================================================
 // OVERDUE EMAIL (weekly, one email per batch)
 // ============================================================
 const OVERDUE_EMAIL_RECIPIENT = 'tannergalloway75@gmail.com';
 
-function scheduleOverdueCheck(task) {
-  // Store when each task was created so we can check 1 week later
-  try {
-    const schedules = JSON.parse(localStorage.getItem('mp_email_schedule') || '{}');
-    if(!schedules[task.id]) {
-      const dueDate = new Date(task.due || Date.now());
-      const sendDate = new Date(dueDate.getTime() + 7*24*60*60*1000);
-      schedules[task.id] = { sendAt: sendDate.toISOString(), taskId: task.id, taskName: task.name };
-      localStorage.setItem('mp_email_schedule', JSON.stringify(schedules));
-    }
-  } catch(e) {}
-}
 
-async function checkAndSendOverdueEmails() {
-  try {
-    const schedules = JSON.parse(localStorage.getItem('mp_email_schedule') || '{}');
-    const now = new Date();
-    const toSend = [];
-    for(const [taskId, info] of Object.entries(schedules)) {
-      if(new Date(info.sendAt) <= now) {
-        const task = state.tasks.find(t=>t.id===taskId);
-        if(task && task.status !== 'Completed') toSend.push(task);
-        delete schedules[taskId];
-      }
-    }
-    localStorage.setItem('mp_email_schedule', JSON.stringify(schedules));
-    if(toSend.length > 0) {
-      await sendOverdueEmailBatch(toSend);
-    }
-  } catch(e) { console.log('Email check error:', e); }
-}
 
-async function sendOverdueEmailBatch(tasks) {
-  // Check we haven't sent a similar email in last 6 days (dedup)
-  try {
-    const { data: recentEmails } = await window._mpdb.from('email_log')
-      .select('*').eq('type','overdue')
-      .gte('sent_at', new Date(Date.now()-6*24*60*60*1000).toISOString());
-    const recentIds = new Set((recentEmails||[]).flatMap(e=>e.task_ids||[]));
-    const newTasks = tasks.filter(t=>!recentIds.has(t.id));
-    if(!newTasks.length) return;
-    // Log the email
-    await window._mpdb.from('email_log').insert({
-      id: uid(), type:'overdue', recipient: OVERDUE_EMAIL_RECIPIENT,
-      subject: 'MTL Maintenance — Overdue Work Orders',
-      task_ids: newTasks.map(t=>t.id),
-    });
-    // Show in-app notification to admin
-    if(currentUser?.role==='admin') {
-      showToast('📧 Overdue email queued for ' + OVERDUE_EMAIL_RECIPIENT);
-    }
-  } catch(e) { console.log('Email send error:', e); }
-}
 
 // Run email check on app load
 setTimeout(checkAndSendOverdueEmails, 3000);
@@ -2573,7 +1920,6 @@ function checkBudgetAlerts() {
 // ============================================================
 // PATCH: saveEquipment — add budget fields
 // ============================================================
-const _origSaveEquipment = saveEquipment;
 async function saveEquipment() {
   const name = document.getElementById('e-name').value.trim(); if(!name){ showToast('Please enter a name'); return; }
   const assignInput = document.getElementById('assign-input');
@@ -2603,23 +1949,10 @@ async function saveEquipment() {
 // ============================================================
 // PATCH: renderDashboard — add budget alerts + push check
 // ============================================================
-const _origRenderDashboard = renderDashboard;
-function renderDashboard() {
-  renderAlerts(); renderEquipListDash(); renderSchedDash(); renderRecentTasks(); renderCostChart(); updateMetrics();
-  // Budget alerts
-  const budgetAlerts = checkBudgetAlerts();
-  if(budgetAlerts.length) {
-    const sec = document.getElementById('alert-section');
-    sec.innerHTML += budgetAlerts.map(a=>`<div class="alert alert-w">💰 ${a}</div>`).join('');
-  }
-  // Schedule overdue email checks for new tasks
-  state.tasks.forEach(t=>{ if(t.status!=='Completed') scheduleOverdueCheck(t); });
-}
 
 // ============================================================
 // PATCH: enterApp — request push, init push check
 // ============================================================
-const _origEnterApp = enterApp;
 async function enterApp() {
   try { localStorage.setItem('mp_session', JSON.stringify(currentUser)); } catch(e) {}
   document.getElementById('auth-screen').style.display='none';
@@ -2648,7 +1981,6 @@ async function enterApp() {
 // ============================================================
 // PATCH: renderEquipmentTable — add QR button for admin
 // ============================================================
-const _origRenderEquipmentTable = renderEquipmentTable;
 function renderEquipmentTable() {
   document.getElementById('equip-table-body').innerHTML=state.equipment.map(e=>{
     const score=calcHealth(e.id);
