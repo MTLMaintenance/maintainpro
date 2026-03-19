@@ -3692,7 +3692,28 @@ function resetNotifSettings() {
     localStorage.removeItem('mp_notif_prefs');
   } catch(e) {}
   closeModal('notif-prefs-modal');
-  showToast('Notification settings reset ✓ — reopen the app to be prompted again');
+
+  // Show instructions based on current permission state
+  const perm = Notification.permission;
+  let msg = '';
+  if(perm === 'denied') {
+    msg = `Notifications are blocked in your browser. To fix this:\n\n` +
+      `📱 Android (Chrome):\n` +
+      `1. Tap the lock icon in the address bar\n` +
+      `2. Tap Notifications → Allow\n` +
+      `3. Refresh the app\n\n` +
+      `📱 Samsung Internet:\n` +
+      `1. Tap menu → Settings → Sites and downloads → Notifications\n` +
+      `2. Find mtlmaintenance.github.io and set to Allow\n` +
+      `3. Refresh the app\n\n` +
+      `💻 Desktop Chrome:\n` +
+      `1. Click the lock icon in the address bar\n` +
+      `2. Set Notifications to Ask or Allow\n` +
+      `3. Refresh the app`;
+  } else {
+    msg = 'Notification settings reset ✓\n\nRefresh the app and you will be asked again.';
+  }
+  alert(msg);
 }
 
 </script>
