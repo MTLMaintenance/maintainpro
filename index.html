@@ -1199,7 +1199,12 @@ function renderAlerts(){
   const op=state.tasks.filter(t=>t.status==='Open'&&!isOverdue(t.due));
   const lp=state.parts.filter(p=>p.qty<=p.reorder);
   const exp=state.documents.filter(d=>d.expiry_date && new Date(d.expiry_date)<=new Date(Date.now()+30*24*60*60*1000));
-  const critObs=(state.observations||[]).filter(o=>o.severity==='critical');
+  // Only show critical obs alert if no linked WO already exists for it
+  const critObs=(state.observations||[]).filter(o=>{
+    if(o.severity!=='critical') return false;
+    const hasWO = state.tasks.some(t=>t.equipId===o.equip_id && t.status!=='Completed' && t.notes && t.notes.includes(o.body.slice(0,30)));
+    return !hasWO;
+  });
   let h='';
   if(od.length) h+=`<div class="alert alert-d"><span class="dot"></span><b>${od.length} overdue:</b> ${od.map(t=>t.name).join(', ')}</div>`;
   if(op.length) h+=`<div class="alert alert-w">📋 <b>${op.length} open work order${op.length>1?'s':''}:</b> ${op.map(t=>t.name).join(', ')}</div>`;
@@ -2720,7 +2725,7 @@ function refreshObsList(equipId){
     </div>
     <div style="font-size:13px">${o.body}</div>
     <div style="display:flex;gap:6px;margin-top:6px">
-      <button class="btn btn-secondary btn-sm" onclick="editObservation('${o.id}','${o.equip_id}')">Edit</button>
+      <button class="btn btn-secondary btn-sm" onclick="editObservation(this)" data-obs-id="${o.id}" data-equip-id="${o.equip_id}">Edit</button>
       ${can('canDelete')?`<button class="btn btn-danger btn-sm" onclick="deleteObservation('${o.id}','${o.equip_id}')">Delete</button>`:''}
     </div>
   </div>`).join('');
@@ -3254,9 +3259,17 @@ function updateTotalCostDisplay() {
 }
 
 // ── EDIT OBSERVATION ─────────────────────────────────────────
-function editObservation(obsId, equipId) {
+function editObservation(btnOrId, equipId) {
+  let obsId = btnOrId;
+  let eqId = equipId;
+  // Support both direct call and button click with data attributes
+  if(btnOrId && btnOrId.dataset) {
+    obsId = btnOrId.dataset.obsId;
+    eqId = btnOrId.dataset.equipId;
+  }
   const obs = state.observations.find(o=>o.id===obsId);
   if(!obs) return;
+  const equipId2 = eqId || obs.equip_id;
 
   const modal = document.createElement('div');
   modal.id = 'edit-obs-modal-temp';
@@ -3278,7 +3291,7 @@ function editObservation(obsId, equipId) {
       </div>
       <div class="form-row">
         <button class="btn btn-secondary" onclick="document.getElementById('edit-obs-modal-temp').remove()">Cancel</button>
-        <button class="btn btn-primary" onclick="saveEditObservation('${obsId}','${equipId}')">Save</button>
+        <button class="btn btn-primary" onclick="saveEditObservation('${obsId}','${equipId2}')">Save</button>
       </div>
     </div>`;
   document.body.appendChild(modal);
