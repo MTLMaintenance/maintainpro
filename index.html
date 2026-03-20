@@ -580,7 +580,12 @@ body.dark-mode .btn-secondary{color:#e8e6de;border-color:#555}
       </div>
         <div class="form-group"><label class="form-label">Priority</label><select class="form-select" id="t-priority"><option>Low</option><option>Medium</option><option selected>High</option><option>Critical</option></select></div>
         <div class="form-group"><label class="form-label">Due Date</label><input class="form-input" id="t-due" type="date"/></div>
-        <div class="form-group"><label class="form-label">Estimated Cost ($)</label><input class="form-input" id="t-cost" type="number" min="0" placeholder="0"/></div>
+        <div class="form-group"><label class="form-label">Estimated Cost ($)</label>
+          <input class="form-input" id="t-cost" type="number" min="0" placeholder="0" oninput="updateTotalCostDisplay()"/>
+          <div id="t-cost-breakdown" style="font-size:11px;color:var(--text2);margin-top:4px;display:none">
+            Parts: <span id="t-parts-cost">$0.00</span> + Labour/Other: <span id="t-other-cost">$0.00</span> = <b id="t-total-cost">$0.00</b>
+          </div>
+        </div>
         <div class="form-group"><label class="form-label">Meter Reading</label><input class="form-input" id="t-meter" placeholder="e.g. 4320 hrs"/></div>
         <div class="form-group"><label class="form-label">Status</label><select class="form-select" id="t-status"><option>Open</option><option>Overdue</option><option>Completed</option></select></div>
         <div class="form-group"><label class="form-label">Overdue Email Reminder</label>
@@ -605,6 +610,12 @@ body.dark-mode .btn-secondary{color:#e8e6de;border-color:#555}
         <button class="btn btn-primary btn-sm" onclick="addPartToWO()">Add</button>
       </div>
       <div id="wo-parts-list"><div style="color:var(--text3);font-size:13px">No parts added yet</div></div>
+      <div id="wo-parts-cost-summary" style="display:none;margin-top:10px;padding:10px 12px;background:var(--accent-bg);border-radius:var(--radius);border:1px solid var(--accent)">
+        <div style="font-size:13px;color:var(--accent-text)">
+          <div style="display:flex;justify-content:space-between;margin-bottom:4px"><span>Parts subtotal:</span><span id="wo-parts-subtotal" style="font-weight:600">$0.00</span></div>
+          <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2)"><span>This will auto-fill Estimated Cost on Details tab</span></div>
+        </div>
+      </div>
     </div>
     <div id="wo-comments" style="display:none">
       <div id="wo-comment-list" style="margin-bottom:12px"><div style="color:var(--text3);font-size:13px">No comments yet</div></div>
@@ -1835,9 +1846,14 @@ function renderWOPartsList(){
       <div style="flex:1"><div style="font-weight:500">${p.part_name}</div>
         <div style="font-size:11px;color:var(--text2)">$${(p.unit_cost||0).toFixed(2)} each × ${p.qty_used} = <b>$${((p.unit_cost||0)*p.qty_used).toFixed(2)}</b></div>
       </div>
-      <button class="btn btn-danger" onclick="woPartsAdded.splice(${i},1);renderWOPartsList();const c=document.getElementById('t-cost');if(c)c.value=woPartsAdded.reduce((s,x)=>s+(x.unit_cost||0)*x.qty_used,0).toFixed(2)">✕</button>
-    </div>`).join('')+`<div style="padding:8px 0;border-top:1px solid var(--border);font-size:13px;font-weight:600;text-align:right">Parts Total: $${total.toFixed(2)}</div>`
+      <button class="btn btn-danger" onclick="woPartsAdded.splice(${i},1);renderWOPartsList();updateWOCostFromParts()">✕</button>
+    </div>`).join('')
     :'<div style="color:var(--text3);font-size:13px">No parts added yet</div>';
+  // Update cost summary
+  const summary = document.getElementById('wo-parts-cost-summary');
+  const subtotalEl = document.getElementById('wo-parts-subtotal');
+  if(summary) summary.style.display = woPartsAdded.length ? 'block' : 'none';
+  if(subtotalEl) subtotalEl.textContent = '$' + total.toFixed(2);
 }
 function addWOComment(){
   const body=document.getElementById('wo-comment-input').value.trim(); if(!body) return;
@@ -3164,6 +3180,51 @@ async function autoCreateCriticalWO(obs, equipId) {
   } catch(e) {
     console.error('Failed to auto-create WO:', e);
   }
+}
+
+// ── WO COST CALCULATOR ───────────────────────────────────────
+function updateWOCostFromParts() {
+  const partsCost = woPartsAdded.reduce((sum,p)=>sum+(p.unit_cost||0)*p.qty_used, 0);
+  const costEl = document.getElementById('t-cost');
+  const otherEl = document.getElementById('t-other-cost');
+  const partsEl = document.getElementById('t-parts-cost');
+  const totalEl = document.getElementById('t-total-cost');
+  const breakdown = document.getElementById('t-cost-breakdown');
+
+  if(!costEl) return;
+
+  // Get any manually entered other costs
+  const currentVal = parseFloat(costEl.value) || 0;
+  const prevPartsCost = parseFloat(costEl.dataset.partsCost || 0);
+  const otherCost = Math.max(0, currentVal - prevPartsCost);
+
+  // Update cost field with parts + other
+  const total = partsCost + otherCost;
+  costEl.value = total > 0 ? total.toFixed(2) : '';
+  costEl.dataset.partsCost = partsCost;
+
+  // Show breakdown if parts have been added
+  if(breakdown) breakdown.style.display = partsCost > 0 ? 'block' : 'none';
+  if(partsEl) partsEl.textContent = '$' + partsCost.toFixed(2);
+  if(otherEl) otherEl.textContent = '$' + otherCost.toFixed(2);
+  if(totalEl) totalEl.textContent = '$' + total.toFixed(2);
+}
+
+function updateTotalCostDisplay() {
+  const costEl = document.getElementById('t-cost');
+  const partsCost = woPartsAdded.reduce((sum,p)=>sum+(p.unit_cost||0)*p.qty_used, 0);
+  const otherEl = document.getElementById('t-other-cost');
+  const partsEl = document.getElementById('t-parts-cost');
+  const totalEl = document.getElementById('t-total-cost');
+  const breakdown = document.getElementById('t-cost-breakdown');
+
+  const total = parseFloat(costEl?.value) || 0;
+  const otherCost = Math.max(0, total - partsCost);
+
+  if(breakdown) breakdown.style.display = partsCost > 0 ? 'block' : 'none';
+  if(partsEl) partsEl.textContent = '$' + partsCost.toFixed(2);
+  if(otherEl) otherEl.textContent = '$' + otherCost.toFixed(2);
+  if(totalEl) totalEl.textContent = '$' + total.toFixed(2);
 }
 
 </script>
