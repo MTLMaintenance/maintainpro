@@ -1425,7 +1425,28 @@ function renderTasks(){
     </tr>`;
   }).join('');
 }
-async function deleteTask(id){ if(!confirm('Delete this work order?'))return; state.tasks=state.tasks.filter(t=>t.id!==id); await persist('tasks','delete',{id}); renderTasks(); renderDashboard(); }
+async function deleteTask(id){
+  if(!confirm('Delete this work order?'))return;
+  // Delete linked critical observation if auto-created
+  const task = state.tasks.find(t=>t.id===id);
+  if(task && task.notes && task.notes.startsWith('Auto-created from critical obs')) {
+    // Find matching observation by equip and content
+    const obsToDelete = state.observations.find(o=>
+      o.equip_id===task.equipId &&
+      task.notes.includes(o.author) &&
+      task.notes.includes(o.body.slice(0,30))
+    );
+    if(obsToDelete) {
+      try {
+        await window._mpdb.from('observations').delete().eq('id', obsToDelete.id);
+        state.observations = state.observations.filter(o=>o.id!==obsToDelete.id);
+      } catch(e) {}
+    }
+  }
+  state.tasks=state.tasks.filter(t=>t.id!==id);
+  await persist('tasks','delete',{id});
+  renderTasks(); renderDashboard();
+}
 
 // ============================================================
 // SCHEDULE
@@ -2698,13 +2719,17 @@ function refreshObsList(equipId){
       ${can('canDelete')?`<button class="btn btn-danger" style="padding:2px 6px;font-size:10px" onclick="deleteObservation('${o.id}','${o.equip_id}')">✕</button>`:''}
     </div>
     <div style="font-size:13px">${o.body}</div>
+    <div style="display:flex;gap:6px;margin-top:6px">
+      <button class="btn btn-secondary btn-sm" onclick="editObservation('${o.id}','${o.equip_id}')">Edit</button>
+      ${can('canDelete')?`<button class="btn btn-danger btn-sm" onclick="deleteObservation('${o.id}','${o.equip_id}')">Delete</button>`:''}
+    </div>
   </div>`).join('');
 }
 async function deleteObservation(obsId,equipId){if(!confirm('Delete?'))return;try{await window._mpdb.from('observations').delete().eq('id',obsId);state.observations=state.observations.filter(o=>o.id!==obsId);refreshObsList(equipId);renderAlerts();}catch(e){showToast('Failed');}}
 async function sendCriticalObsNotification(obs,equipId){
   const equip=state.equipment.find(e=>e.id===equipId);
   
-  try{emailjs.init('n5n6_xxmNNHqk0xrE');await emailjs.send('service_o320zzu','template_je3rl4j',{to_email:'tannergalloway75@gmail.com',message:'🚨 CRITICAL OBSERVATION\n\nEquipment: '+(equip?.name||'Unknown')+'\nBy: '+obs.author+'\n\n'+obs.body+'\n\nhttps://mtlmaintenance.github.io/mtl-maintenance'});showToast('🚨 Critical alert sent');}catch(e){showToast('🚨 Critical — push sent');}
+  try{ await sendCriticalObsEmail(obs, equipId); showToast('🚨 Critical alert sent'); }catch(e){ showToast('🚨 Critical observation logged'); }
 }
 
 // ── OVERDUE EMAIL ────────────────────────────────────────────
@@ -3226,6 +3251,81 @@ function updateTotalCostDisplay() {
   if(partsEl) partsEl.textContent = '$' + partsCost.toFixed(2);
   if(otherEl) otherEl.textContent = '$' + otherCost.toFixed(2);
   if(totalEl) totalEl.textContent = '$' + total.toFixed(2);
+}
+
+// ── EDIT OBSERVATION ─────────────────────────────────────────
+function editObservation(obsId, equipId) {
+  const obs = state.observations.find(o=>o.id===obsId);
+  if(!obs) return;
+
+  const modal = document.createElement('div');
+  modal.id = 'edit-obs-modal-temp';
+  modal.className = 'modal-backdrop open';
+  modal.innerHTML = `
+    <div class="modal" style="max-width:460px">
+      <div class="modal-header"><span class="modal-title">Edit Observation</span><button class="modal-close" onclick="document.getElementById('edit-obs-modal-temp').remove()">✕</button></div>
+      <div class="form-grid">
+        <div class="form-group full"><label class="form-label">Severity</label>
+          <select class="form-select" id="edit-obs-severity">
+            <option value="info" ${obs.severity==='info'?'selected':''}>ℹ Info</option>
+            <option value="watch" ${obs.severity==='watch'?'selected':''}>👀 Watch</option>
+            <option value="critical" ${obs.severity==='critical'?'selected':''}>🚨 Critical</option>
+          </select>
+        </div>
+        <div class="form-group full"><label class="form-label">Observation</label>
+          <textarea class="form-textarea" id="edit-obs-body" style="min-height:90px">${obs.body}</textarea>
+        </div>
+      </div>
+      <div class="form-row">
+        <button class="btn btn-secondary" onclick="document.getElementById('edit-obs-modal-temp').remove()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveEditObservation('${obsId}','${equipId}')">Save</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+async function saveEditObservation(obsId, equipId) {
+  const body = document.getElementById('edit-obs-body')?.value.trim();
+  const severity = document.getElementById('edit-obs-severity')?.value;
+  if(!body) { showToast('Please enter an observation'); return; }
+
+  const obs = state.observations.find(o=>o.id===obsId);
+  if(!obs) return;
+
+  const wasCritical = obs.severity === 'critical';
+  const nowCritical = severity === 'critical';
+
+  obs.body = body;
+  obs.severity = severity;
+
+  try {
+    await window._mpdb.from('observations').update({body, severity}).eq('id', obsId);
+    showToast('Observation updated ✓');
+    document.getElementById('edit-obs-modal-temp')?.remove();
+    refreshObsList(equipId);
+    renderAlerts();
+    if(document.getElementById('recent-obs-list')) renderRecentObservations();
+
+    // Only send email if severity just changed TO critical
+    if(nowCritical && !wasCritical) {
+      await sendCriticalObsEmail(obs, equipId);
+      await autoCreateCriticalWO(obs, equipId);
+      showToast('🚨 Critical — email sent and WO created');
+    }
+  } catch(e) {
+    showToast('Failed to update');
+  }
+}
+
+async function sendCriticalObsEmail(obs, equipId) {
+  const equip = state.equipment.find(e=>e.id===equipId);
+  try {
+    emailjs.init('n5n6_xxmNNHqk0xrE');
+    await emailjs.send('service_o320zzu','template_je3rl4j',{
+      to_email:'tannergalloway75@gmail.com',
+      message:'🚨 CRITICAL OBSERVATION\n\nEquipment: '+(equip?.name||'Unknown')+'\nBy: '+obs.author+'\n\n'+obs.body+'\n\nhttps://mtlmaintenance.github.io/mtl-maintenance'
+    });
+  } catch(e) { console.log('Email failed:', e); }
 }
 
 </script>
