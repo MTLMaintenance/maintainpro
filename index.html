@@ -875,6 +875,9 @@ function showPending() {
 }
 function showErr(msg) { const e=document.getElementById('auth-err'); e.textContent=msg; e.style.display='block'; }
 
+const MAX_LOGIN_ATTEMPTS = 5;
+const LOCKOUT_MINUTES = 15;
+
 async function doLogin() {
   const username = document.getElementById('auth-user').value.trim();
   const pass = document.getElementById('auth-pass').value;
@@ -885,11 +888,46 @@ async function doLogin() {
   try {
     const { data: profile, error } = await window._mpdb.from('profiles').select('*').eq('username', username).single();
     if (error||!profile) { showErr('Username not found.'); btn.textContent='Sign In'; btn.disabled=false; return; }
-    let storedPass='';
-    try { storedPass=atob((profile.password_hash||'').replace(/\s/g,'')); } catch(e) {}
-    if (storedPass!==pass) { showErr('Incorrect password.'); btn.textContent='Sign In'; btn.disabled=false; return; }
+
+    // Check if account is locked
+    if (profile.locked_until && new Date(profile.locked_until) > new Date()) {
+      const mins = Math.ceil((new Date(profile.locked_until) - new Date()) / 60000);
+      showErr('Account locked due to too many failed attempts. Try again in ' + mins + ' minute' + (mins!==1?'s':'') + '.');
+      btn.textContent='Sign In'; btn.disabled=false; return;
+    }
+
+    // Check password
+    const hashedInput = await hashPassword(pass);
+    const storedHash = profile.password_hash || '';
+    let passwordMatch = false;
+    if (storedHash.length === 64) {
+      passwordMatch = storedHash === hashedInput;
+    } else {
+      try { passwordMatch = atob(storedHash.replace(/\s/g,'')) === pass; } catch(e) {}
+    }
+
+    if (!passwordMatch) {
+      const attempts = (profile.login_attempts || 0) + 1;
+      const updateData = { login_attempts: attempts };
+      if (attempts >= MAX_LOGIN_ATTEMPTS) {
+        const lockUntil = new Date(Date.now() + LOCKOUT_MINUTES * 60000).toISOString();
+        updateData.locked_until = lockUntil;
+        updateData.login_attempts = 0;
+        showErr('Too many failed attempts. Account locked for ' + LOCKOUT_MINUTES + ' minutes.');
+      } else {
+        const remaining = MAX_LOGIN_ATTEMPTS - attempts;
+        showErr('Incorrect password. ' + remaining + ' attempt' + (remaining!==1?'s':'') + ' remaining.');
+      }
+      await window._mpdb.from('profiles').update(updateData).eq('username', username);
+      btn.textContent='Sign In'; btn.disabled=false; return;
+    }
+
+    // Success — reset attempts
+    await window._mpdb.from('profiles').update({ login_attempts: 0, locked_until: null }).eq('username', username);
+
     if (profile.status==='pending') { showErr('Your account is pending admin approval.'); btn.textContent='Sign In'; btn.disabled=false; return; }
     if (profile.status==='denied') { showErr('Access denied. Contact your administrator.'); btn.textContent='Sign In'; btn.disabled=false; return; }
+
     const isAdmin = username.toLowerCase()===ADMIN_USERNAME.toLowerCase();
     currentUser = { id: profile.id, name: profile.full_name||username, role: isAdmin?'admin':'tech', username };
     enterApp();
@@ -3613,6 +3651,15 @@ async function deleteInvoice(invoiceId, equipId) {
   } catch(e) {
     showToast('Failed to delete');
   }
+}
+
+// ── UNLOCK USER ───────────────────────────────────────────────
+async function unlockUser(userId, userName) {
+  try {
+    await window._mpdb.from('profiles').update({ login_attempts: 0, locked_until: null }).eq('id', userId);
+    showToast(userName + ' unlocked ✓');
+    renderUsersTable();
+  } catch(e) { showToast('Failed to unlock'); }
 }
 
 </script>
