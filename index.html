@@ -3568,8 +3568,33 @@ async function saveInvoice() {
   if(!supplier && !amount) { showToast('Please fill in at least supplier or amount'); return; }
   
   const clearPhoto = document.getElementById('inv-clear-photo')?.checked;
-  const photoToSave = (clearPhoto || !_invoicePhotoData) ? null : _invoicePhotoData;
-  
+  let photoPath = null;
+
+  // Upload photo to Supabase Storage if not clearing
+  if(_invoicePhotoData && !clearPhoto) {
+    try {
+      const invoiceId = uid();
+      const fileName = 'invoice-' + invoiceId + '.jpg';
+      // Convert base64 to blob
+      const base64Data = _invoicePhotoData.split(',')[1];
+      const byteCharacters = atob(base64Data);
+      const byteNumbers = new Array(byteCharacters.length);
+      for(let i=0;i<byteCharacters.length;i++) byteNumbers[i]=byteCharacters.charCodeAt(i);
+      const blob = new Blob([new Uint8Array(byteNumbers)], {type:'image/jpeg'});
+      
+      const { data: uploadData, error: uploadError } = await window._mpdb.storage
+        .from('invoices')
+        .upload(fileName, blob, { contentType: 'image/jpeg', upsert: false });
+      
+      if(!uploadError) {
+        photoPath = fileName;
+        showToast('Photo uploaded ✓');
+      }
+    } catch(e) {
+      console.log('Photo upload failed, saving without photo:', e);
+    }
+  }
+
   const invoice = {
     id: uid(),
     equip_id: _currentInvoiceEquipId,
@@ -3578,7 +3603,7 @@ async function saveInvoice() {
     invoice_date: date || null,
     invoice_number: document.getElementById('inv-number').value.trim(),
     notes: document.getElementById('inv-notes').value.trim(),
-    photo: photoToSave,
+    photo: photoPath,
     created_by: currentUser.name,
     created_at: new Date().toISOString(),
   };
@@ -3632,7 +3657,7 @@ async function renderInvoicesList(equipId) {
               ${inv.notes?`<div style="font-size:12px;color:var(--text2);margin-top:4px">${inv.notes}</div>`:''}
             </div>
             <div style="display:flex;gap:6px;flex-shrink:0">
-              ${inv.photo?`<button class="btn btn-secondary btn-sm" onclick="viewPhoto('${inv.photo}')">📎 Photo</button>`:''}
+              ${inv.photo?`<button class="btn btn-secondary btn-sm" onclick="viewInvoicePhoto('${inv.photo}')">📎 Photo</button>`:''}
               ${can('canDelete')?`<button class="btn btn-danger btn-sm" onclick="deleteInvoice('${inv.id}','${equipId}')">Delete</button>`:''}
             </div>
           </div>
@@ -3660,6 +3685,48 @@ async function unlockUser(userId, userName) {
     showToast(userName + ' unlocked ✓');
     renderUsersTable();
   } catch(e) { showToast('Failed to unlock'); }
+}
+
+// ── INVOICE PHOTO VIEWER ─────────────────────────────────────
+async function viewInvoicePhoto(photoPath) {
+  try {
+    const { data } = await window._mpdb.storage
+      .from('invoices')
+      .createSignedUrl(photoPath, 300); // 5 minute signed URL
+    if(data?.signedUrl) {
+      window.open(data.signedUrl, '_blank');
+    } else {
+      showToast('Could not load photo');
+    }
+  } catch(e) {
+    showToast('Could not load photo');
+  }
+}
+
+// ── DELETE INVOICE PHOTO FROM STORAGE ────────────────────────
+async function deleteInvoicePhotoFromStorage(photoPath) {
+  if(!photoPath) return;
+  try {
+    await window._mpdb.storage.from('invoices').remove([photoPath]);
+  } catch(e) {
+    console.log('Photo delete error:', e);
+  }
+}
+
+// Override deleteInvoice to also remove photo from storage
+const _baseDeleteInvoice = deleteInvoice;
+async function deleteInvoice(invoiceId, equipId) {
+  if(!confirm('Delete this invoice?')) return;
+  try {
+    // Get photo path first
+    const { data: inv } = await window._mpdb.from('invoices').select('photo').eq('id', invoiceId).single();
+    if(inv?.photo) await deleteInvoicePhotoFromStorage(inv.photo);
+    await window._mpdb.from('invoices').delete().eq('id', invoiceId);
+    showToast('Invoice deleted');
+    renderInvoicesList(equipId);
+  } catch(e) {
+    showToast('Failed to delete');
+  }
 }
 
 </script>
