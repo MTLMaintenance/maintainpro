@@ -803,6 +803,60 @@ body.dark-mode .btn-secondary{color:#e8e6de;border-color:#555}
 // ============================================================
 // CONFIG
 // ============================================================
+// ── SESSION TOKEN ────────────────────────────────────────────
+async function generateSessionToken() {
+  const array = new Uint8Array(32);
+  crypto.getRandomValues(array);
+  return Array.from(array).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+async function createSession(username, userId) {
+  const token = await generateSessionToken();
+  const expiresAt = new Date(Date.now() + 8*60*60*1000).toISOString();
+  try {
+    await window._mpdb.from('app_sessions').insert({
+      token, username, user_id: userId,
+      expires_at: expiresAt, last_active: new Date().toISOString()
+    });
+    localStorage.setItem('mp_session_token', token);
+  } catch(e) { console.error('Session create failed:', e); }
+  return token;
+}
+
+async function validateSession() {
+  const token = localStorage.getItem('mp_session_token');
+  if(!token) return null;
+  try {
+    const { data } = await window._mpdb.from('app_sessions')
+      .select('*, profiles!app_sessions_username_fkey(*)')
+      .eq('token', token)
+      .single();
+    if(!data) return null;
+    if(new Date(data.expires_at) < new Date()) {
+      // Expired - clean up
+      await window._mpdb.from('app_sessions').delete().eq('token', token);
+      localStorage.removeItem('mp_session_token');
+      localStorage.removeItem('mp_session');
+      return null;
+    }
+    // Refresh last_active and extend expiry
+    const newExpiry = new Date(Date.now() + 8*60*60*1000).toISOString();
+    await window._mpdb.from('app_sessions').update({
+      last_active: new Date().toISOString(),
+      expires_at: newExpiry
+    }).eq('token', token);
+    return data;
+  } catch(e) { return null; }
+}
+
+async function destroySession() {
+  const token = localStorage.getItem('mp_session_token');
+  if(token) {
+    try { await window._mpdb.from('app_sessions').delete().eq('token', token); } catch(e) {}
+    localStorage.removeItem('mp_session_token');
+  }
+}
+
 async function hashPassword(password) {
   const msgBuffer = new TextEncoder().encode(password);
   const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
@@ -830,6 +884,23 @@ async function startApp() {
   document.getElementById('setup-banner') && (document.getElementById('setup-banner').style.display='none');
   // Check saved session
   try {
+    // First try session token validation
+    const sessionData = await validateSession();
+    if(sessionData) {
+      const profile = sessionData.profiles || 
+        (await window._mpdb.from('profiles').select('*').eq('username', sessionData.username).single()).data;
+      if(profile && profile.status === 'approved') {
+        const isAdmin = sessionData.username.toLowerCase() === ADMIN_USERNAME.toLowerCase();
+        currentUser = { 
+          id: profile.id, 
+          name: profile.full_name || sessionData.username, 
+          role: isAdmin ? 'admin' : profile.role, 
+          username: sessionData.username 
+        };
+        await enterApp(); return;
+      }
+    }
+    // Fallback to old session for backwards compatibility
     const saved = localStorage.getItem('mp_session');
     if (saved) {
       const u = JSON.parse(saved);
@@ -837,6 +908,8 @@ async function startApp() {
       if (profile && profile.status === 'approved') {
         const isAdmin = u.username.toLowerCase() === ADMIN_USERNAME.toLowerCase();
         currentUser = { ...u, role: isAdmin ? 'admin' : profile.role };
+        // Upgrade to token-based session
+        await createSession(u.username, profile.id);
         await enterApp(); return;
       } else { localStorage.removeItem('mp_session'); }
     }
@@ -930,6 +1003,8 @@ async function doLogin() {
 
     const isAdmin = username.toLowerCase()===ADMIN_USERNAME.toLowerCase();
     currentUser = { id: profile.id, name: profile.full_name||username, role: isAdmin?'admin':'tech', username };
+    // Create secure session token
+    await createSession(username, profile.id);
     enterApp();
   } catch(e) { showErr('Login failed. Try again.'); btn.textContent='Sign In'; btn.disabled=false; }
 }
@@ -958,6 +1033,7 @@ document.getElementById('auth-pass').addEventListener('keydown', e => { if(e.key
 
 
 async function signOut() {
+  await destroySession();
   localStorage.removeItem('mp_session');
   currentUser=null;
   document.getElementById('app').style.display='none';
@@ -3186,6 +3262,16 @@ async function enterApp(){
   // Update last_seen immediately and every 2 minutes
   updateLastSeen();
   setInterval(updateLastSeen, 2*60*1000);
+  // Refresh session token every 30 minutes
+  setInterval(async ()=>{
+    const token = localStorage.getItem('mp_session_token');
+    if(token) {
+      const newExpiry = new Date(Date.now() + 8*60*60*1000).toISOString();
+      try { await window._mpdb.from('app_sessions').update({
+        last_active: new Date().toISOString(), expires_at: newExpiry
+      }).eq('token', token); } catch(e) {}
+    }
+  }, 30*60*1000);
 }
 
 // ── CHAT SIDEBAR MOBILE ──────────────────────────────────────
