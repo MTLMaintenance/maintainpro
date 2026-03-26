@@ -2938,38 +2938,9 @@ async function sendCriticalObsNotification(obs,equipId){
 }
 
 // ── OVERDUE EMAIL ────────────────────────────────────────────
-function scheduleOverdueCheck(task){
-  const freqDays=task.email_freq!==undefined?task.email_freq:7;if(freqDays===0)return;
-  try{
-    const schedules=JSON.parse(localStorage.getItem('mp_email_schedule')||'{}');
-    const dueDate=new Date(task.due||Date.now());
-    const now=new Date();
-    let sendDate;
-    if(dueDate<now){
-      // Already overdue - if not scheduled yet, send at next frequency interval from now
-      sendDate=new Date(now.getTime()+freqDays*24*60*60*1000);
-      // If task just became overdue (due within last day), send sooner
-      const daysPastDue=(now-dueDate)/(1000*60*60*24);
-      if(daysPastDue<=1) sendDate=new Date(now.getTime()+60*60*1000); // 1 hour
-    } else {
-      sendDate=new Date(dueDate.getTime()+freqDays*24*60*60*1000);
-    }
-    if(!schedules[task.id]||schedules[task.id].freqDays!==freqDays){
-      schedules[task.id]={sendAt:sendDate.toISOString(),taskId:task.id,taskName:task.name,freqDays,equipName:equipName(task.equipId),due:task.due,priority:task.priority||'Normal'};
-      localStorage.setItem('mp_email_schedule',JSON.stringify(schedules));
-    }
-  }catch(e){}
-}
-async function checkAndSendOverdueEmails(){
-  try{const schedules=JSON.parse(localStorage.getItem('mp_email_schedule')||'{}');const now=new Date();const toSend=[];
-    for(const[taskId,info]of Object.entries(schedules)){if(new Date(info.sendAt)<=now){const task=state.tasks.find(t=>t.id===taskId);if(task&&task.status!=='Completed'){toSend.push({...task,equipName:info.equipName||equipName(task.equipId)});const next=new Date(now.getTime()+(info.freqDays||7)*24*60*60*1000);schedules[taskId]={...info,sendAt:next.toISOString()};}else{delete schedules[taskId];}}}
-    localStorage.setItem('mp_email_schedule',JSON.stringify(schedules));if(toSend.length>0)await sendOverdueEmailBatch(toSend);
-  }catch(e){}
-}
-async function sendOverdueEmailBatch(tasks){
-  try{const taskList=tasks.map(t=>'• '+t.name+'\n  Equipment: '+(t.equipName||equipName(t.equipId))+'\n  Due: '+t.due+'\n  Priority: '+(t.priority||'Normal')+'\n  Reminder: every '+(t.email_freq||7)+' day(s)').join('\n\n');emailjs.init('n5n6_xxmNNHqk0xrE');await emailjs.send('service_o320zzu','template_je3rl4j',{to_email:'tannergalloway75@gmail.com',message:taskList});showToast('📧 Overdue reminder sent');}catch(e){showToast('Email failed');}
-}
-setTimeout(checkAndSendOverdueEmails,3000);
+// scheduleOverdueCheck removed - handled by cron
+// Overdue emails now handled by Cloudflare cron Worker (mtl-cron)
+// EmailJS overdue email system removed
 
 // ── GROUPS ───────────────────────────────────────────────────
 let activeGroupFilter='all',equipGroupFilter='all';
@@ -3197,7 +3168,7 @@ function showPanel(id){
 function renderDashboard(){
   renderAlerts();renderEquipListDash();renderSchedDash();renderRecentTasks();renderCostChart();updateMetrics();
   const budgetAlerts=checkBudgetAlerts();if(budgetAlerts.length){const sec=document.getElementById('alert-section');if(sec)sec.innerHTML+=budgetAlerts.map(a=>`<div class="alert alert-w">💰 ${a}</div>`).join('');}
-  state.tasks.forEach(t=>{if(t.status!=='Completed')scheduleOverdueCheck(t);});
+  // Overdue email scheduling handled by Cloudflare cron
   if(document.getElementById('recent-obs-list'))renderRecentObservations();
   if(document.getElementById('fleet-health-dash'))renderFleetHealthDash();
 }
