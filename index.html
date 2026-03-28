@@ -1904,18 +1904,9 @@ async function openTaskDetail(id){
       <button class="btn btn-secondary btn-sm" style="margin-top:6px" onclick="postDetailComment('${t.id}')">Post Comment</button>
     </div>
     ${photoHtml?`<div id="dt-photos" style="display:none">${photoHtml}</div>`:''}
-    <div id="signoff-section-${t.id}" style="${t.status!=='Completed'?'':'display:none'}">
-      <div style="background:var(--bg2);border-radius:var(--radius);padding:10px 12px;margin-top:12px">
-        <div style="font-size:12px;font-weight:600;color:var(--text2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.4px">Sign Off to Complete</div>
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-          <div><label class="form-label">Your Name</label><input class="form-input" id="signoff-name-${t.id}" placeholder="Full name" style="width:100%"/></div>
-          <div><label class="form-label">PIN (4 digits)</label><input class="form-input" id="signoff-pin-${t.id}" type="password" maxlength="4" placeholder="••••" style="width:100%"/></div>
-        </div>
-        <div style="font-size:11px;color:var(--text3);margin-top:6px">By signing off you confirm this work order is complete.</div>
-      </div>
-    </div>
+    
     <div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end;flex-wrap:wrap">
-      ${t.status!=='Completed'?`<button class="btn btn-primary" onclick="markCompleteWithSignoff('${t.id}')">✓ Sign Off & Complete</button>`:'<span class="badge bs">Completed — '+( t.signoff_name?'Signed off by '+t.signoff_name:'')+'</span>'}
+      ${t.status!=='Completed'?`<button class="btn btn-primary" onclick="markComplete('${t.id}')">✓ Mark Complete</button>`:'<span class="badge bs">Completed</span>'}
       <button class="btn btn-secondary" onclick="closeModal('detail-modal')">Close</button>
     </div>`;
   openModal('detail-modal');
@@ -1959,17 +1950,39 @@ async function toggleCheck(taskId,idx){
   t.checklist[idx].done=!t.checklist[idx].done;
   await persist('tasks','upsert',t); openTaskDetail(taskId);
 }
-async function markComplete(taskId){
-  const t=state.tasks.find(x=>x.id===taskId); if(!t)return;
-  const equip=state.equipment.find(e=>e.id===t.equipId);
-  const curHrs=equip?equip.hours:0;
-  const newHrs=prompt('Update hour meter for '+(equip?.name||'equipment')+'?\nCurrent: '+curHrs.toLocaleString()+' hrs\nEnter new reading (or cancel to skip):');
-  if(newHrs!==null&&newHrs.trim()!==''){const parsed=parseInt(newHrs);if(!isNaN(parsed)&&parsed>=curHrs){if(equip){equip.hours=parsed;t.meter=parsed+' hrs';await persist('equipment','upsert',equip);}}}
-  t.status='Completed';
-  if(t.photos&&t.photos.length)t.photos=[];
-  await persist('tasks','upsert',t);
+async function markComplete(taskId) {
+  const t = state.tasks.find(x => x.id === taskId);
+  if (!t) return;
+
+  const equip = state.equipment.find(e => e.id === t.equipId);
+  const currentHours = equip ? equip.hours : 0;
+  
+  // Optional hour update prompt
+  const newHours = prompt(`Update hour meter for ${equip?.name || 'equipment'}?\nCurrent: ${currentHours.toLocaleString()} hrs\nEnter new reading (or cancel to skip):`);
+  
+  if (newHours !== null && newHours.trim() !== '') {
+    const parsed = parseInt(newHours);
+    if (!isNaN(parsed) && parsed >= currentHours) {
+      if (equip) {
+        equip.hours = parsed;
+        t.meter = parsed + ' hrs';
+        await persist('equipment', 'upsert', equip);
+      }
+    }
+  }
+
+  t.status = 'Completed';
+  // Clear temporary photos to save space on completed orders
+  if (t.photos && t.photos.length) {
+    t.photos = [];
+  }
+
+  await persist('tasks', 'upsert', t);
   await runRecurrenceEngine();
-  closeModal('detail-modal'); renderDashboard();
+  
+  closeModal('detail-modal');
+  showToast('Work Order Completed ✓');
+  renderDashboard();
 }
 
 function openEquipDetail(id){
